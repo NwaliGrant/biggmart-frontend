@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>The BiggMart | All You Want in One Bigg Place</title>
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ======================= LOADING SPINNER ======================= -->
+  <div id="loadingSpinner" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Loading The BiggMart...</p>
+  </div>
+
+  <div id="mainContent" style="display: none;">
+  
+    <!-- ======================= HEADER / NAVIGATION ======================= -->
+    <header class="site-header">
+      <nav class="navbar container">
+        <div class="logo-area">
+          <img src="./assets/logo.png" alt="The BiggMart Logo" class="logo-img">
+          <span class="brand-name">The BiggMart</span>
+        </div>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-menu" id="navMenu">
+          <li><a href="#hero" class="nav-link">Home</a></li>
+          <li><a href="#about" class="nav-link">About</a></li>
+          <li><a href="#why-shop" class="nav-link">Why Us</a></li>
+          <li><a href="#products" class="nav-link">Products</a></li>
+          <li><a href="#testimonials" class="nav-link">Reviews</a></li>
+          <li><a href="#contact" class="nav-link">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <!-- ======================= HERO SECTION (Dynamic) ======================= -->
+      <section id="hero" class="hero">
+        <div class="container hero-grid">
+          <div class="hero-content">
+            <h1>All You Want in One Bigg Place</h1>
+            <p class="hero-subhead">At The BiggMart, we believe shopping should be simple, exciting, and rewarding.</p>
+            <p class="hero-brief">From gadgets and electronics to home essentials, fashion accessories, and everyday must-haves — we bring quality, convenience, and satisfaction together.</p>
+            <div class="hero-buttons">
+              <button class="btn btn-primary cta-contact-btn" id="heroContactBtn"><i class="fas fa-headset"></i> Contact Us</button>
+              <a href="#products" class="btn btn-outline">Shop Now</a>
+            </div>
+          </div>
+          <div class="hero-visual" id="heroContainer">
+            <!-- Hero images will be loaded dynamically via JavaScript -->
+            <div class="hero-slider" id="heroSlider"></div>
+            <div class="hero-dots" id="heroDots"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= ANIMATED COUNTER STATS (Dynamic) ======================= -->
+      <section class="counter-stats">
+        <div class="container stats-grid" id="statsGrid">
+          <div class="stat-item">
+            <div class="stat-number" id="statCustomers">0</div>
+            <div class="stat-label">Happy Customers</div>
+            <i class="fas fa-smile stat-icon"></i>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="statProducts">0</div>
+            <div class="stat-label">Products Available</div>
+            <i class="fas fa-boxes stat-icon"></i>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="statCities">0</div>
+            <div class="stat-label">Cities Served</div>
+            <i class="fas fa-city stat-icon"></i>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="statDelivery">0<span id="statDeliverySuffix">%</span></div>
+            <div class="stat-label">On-Time Delivery</div>
+            <i class="fas fa-truck stat-icon"></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= PRODUCTS SECTION (Dynamic) ======================= -->
+      <section id="products" class="products-section section-padding">
+        <div class="container">
+          <h2 class="section-title">Featured <span class="green-text">Products</span></h2>
+          
+          <!-- Category Filter Buttons -->
+          <div class="category-filters" id="categoryFilters">
+            <button class="filter-btn active" data-category="all">All Products</button>
+            <button class="filter-btn" data-category="gadgets">Gadgets</button>
+            <button class="filter-btn" data-category="electronics">Electronics</button>
+            <button class="filter-btn" data-category="home">Home Essentials</button>
+          </div>
+
+          <!-- Product Carousel -->
+          <div class="carousel-container">
+            <button class="carousel-btn prev-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+            <div class="carousel-track" id="carouselTrack">
+              <!-- Products will be loaded dynamically via JavaScript -->
+            </div>
+            <button class="carousel-btn next-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= ABOUT SECTION ======================= -->
+      <section id="about" class="about section-padding">
+        <div class="container">
+          <h2 class="section-title">About <span class="green-text">The BiggMart</span></h2>
+          <div class="about-text">
+            <p>At The BiggMart, we believe shopping should be simple, exciting, and rewarding. That's why we've created a one-stop destination where quality, convenience, and customer satisfaction come together.</p>
+            <p>From the latest gadgets and electronics to home essentials, fashion accessories, and everyday must-haves, we carefully select products that add value to your life. Every item in our store is chosen with one goal in mind — to ensure you enjoy maximum satisfaction and complete peace of mind with every purchase.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= WHY SHOP WITH US ======================= -->
+      <section id="why-shop" class="why-shop section-padding light-bg">
+        <div class="container">
+          <h2 class="section-title">Why Shop With <span class="green-text">The BiggMart?</span></h2>
+          <div class="cards-grid">
+            <div class="card">
+              <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+              <h3>Quality You Can Trust</h3>
+              <p>Products that meet high standards of quality, functionality, and durability.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon"><i class="fas fa-cubes"></i></div>
+              <h3>A Wide Range of Products</h3>
+              <p>Upgrade your lifestyle, shop for your home, or find the perfect gift.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon"><i class="fas fa-heart"></i></div>
+              <h3>Customer-First Experience</h3>
+              <p>Seamless shopping, reliable service, and dependable support.</p>
+            </div>
+            <div class="card">
+              <div class="card-icon"><i class="fas fa-tag"></i></div>
+              <h3>Value for Your Money</h3>
+              <p>Great products at competitive prices.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= MISSION & VISION ======================= -->
+      <section class="mission-vision section-padding">
+        <div class="container two-col-grid">
+          <div class="mission-box">
+            <i class="fas fa-bullseye mission-icon"></i>
+            <h3>Our Mission</h3>
+            <p>To make quality products accessible to everyone while delivering an exceptional shopping experience built on trust, convenience, and customer satisfaction.</p>
+          </div>
+          <div class="vision-box">
+            <i class="fas fa-eye vision-icon"></i>
+            <h3>Our Vision</h3>
+            <p>To become a leading e-commerce destination where customers confidently find everything they need, knowing they will receive quality products and outstanding service every time.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= CUSTOMER TESTIMONIALS (Dynamic) ======================= -->
+      <section id="testimonials" class="testimonials section-padding light-bg">
+        <div class="container">
+          <h2 class="section-title">What Our <span class="green-text">Customers Say</span></h2>
+          <div class="testimonials-grid" id="testimonialsGrid">
+            <!-- Testimonials will be loaded dynamically via JavaScript -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= WHY CHOOSE US ======================= -->
+      <section id="choose-us" class="choose-us section-padding">
+        <div class="container">
+          <h2 class="section-title">Why <span class="green-text">Choose Us?</span></h2>
+          <div class="usp-grid">
+            <div class="usp-item"><i class="fas fa-heart green-icon"></i> We love, value, and respect all our customers</div>
+            <div class="usp-item"><i class="fas fa-shopping-cart green-icon"></i> Shopping has never been easier</div>
+            <div class="usp-item"><i class="fas fa-headset green-icon"></i> Active customer service – all questions answered, issues sorted, orders processed & delivered on time</div>
+            <div class="usp-item"><i class="fas fa-check-circle green-icon"></i> No deceitful product descriptions</div>
+            <div class="usp-item"><i class="fas fa-box-open green-icon"></i> No "what I ordered vs what I got" – you get exactly what you pay for</div>
+            <div class="usp-item"><i class="fas fa-truck green-icon"></i> Distance isn’t a barrier – we deliver far and wide</div>
+            <div class="usp-item"><i class="fas fa-smile green-icon"></i> We would choose YOU anytime, any day – give us the privilege to serve you</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= CLOSING BRAND STATEMENT ======================= -->
+      <section class="closing-statement">
+        <div class="container">
+          <div class="quote-block">
+            <i class="fas fa-quote-left quote-icon"></i>
+            <p>At The BiggMart, we're more than just an online store — we're your trusted shopping partner, dedicated to helping you discover products you'll love and use with confidence.</p>
+            <p class="brand-signature"><strong>The BiggMart...</strong> all you want in one Bigg place.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================= CONTACT SECTION ======================= -->
+      <section id="contact" class="contact-section section-padding">
+        <div class="container">
+          <h2 class="section-title">Get in <span class="green-text">Touch</span></h2>
+          <div class="contact-wrapper">
+            <div class="contact-info">
+              <div class="contact-detail"><i class="fas fa-phone-alt blue-icon"></i> <strong>Phone:</strong> 09036091718, 09029194447</div>
+              <div class="contact-detail"><i class="fab fa-whatsapp green-icon"></i> <strong>WhatsApp:</strong> 09025188180</div>
+              <div class="contact-detail"><i class="fas fa-envelope blue-icon"></i> <strong>Email:</strong> biggmart.service@gmail.com</div>
+              <div class="contact-detail"><i class="fab fa-tiktok"></i> <strong>TikTok:</strong> biggmart.ng</div>
+              <div class="contact-detail"><i class="fab fa-instagram"></i> <strong>Instagram:</strong> the_biggmart</div>
+              <div class="contact-detail"><i class="fas fa-map-marker-alt blue-icon"></i> <strong>Address:</strong> 122 Aba Road, Garrison PH.</div>
+            </div>
+            <div class="contact-actions">
+              <button class="btn btn-wa" id="whatsappBtn"><i class="fab fa-whatsapp"></i> Chat on WhatsApp</button>
+              <button class="btn btn-call" id="callBtn"><i class="fas fa-phone-alt"></i> Call Us</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+<!-- ======================= FOOTER ======================= -->
+<footer class="site-footer">
+    <div class="container footer-content">
+        <!-- Brand -->
+        <div class="footer-brand">
+            <div class="footer-brand-inner">
+                <img src="./assets/logo.png" alt="The BiggMart logo" class="footer-logo" 
+                     onerror="this.style.display='none'">
+                <div class="footer-brand-text">
+                    <h3>The BiggMart</h3>
+                    <p>BiggMart Global Services</p>
+                </div>
+            </div>
+            <small>© <span id="currentYear"></span> The BiggMart. All rights reserved.</small>
+        </div>
+        
+        <!-- Links -->
+        <div class="footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+                <li><a href="#hero">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#products">Products</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+        
+        <!-- Social -->
+        <div class="footer-social">
+            <h4>Follow Us</h4>
+            <div class="social-icons">
+                <a href="https://www.instagram.com/the_biggmart" target="_blank" aria-label="Instagram">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="https://www.tiktok.com/@biggmart.ng" target="_blank" aria-label="TikTok">
+                    <i class="fab fa-tiktok"></i>
+                </a>
+                <a href="https://wa.me/09025188180" target="_blank" aria-label="WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-credit">
+        <div class="container credit-text">
+            Made with <span class="animated-heart">❤️</span> by 
+            <a href="https://nwaligrant.vercel.app" target="_blank" class="credit-link">Nwali Grant</a>
+        </div>
+    </div>
+</footer>
+    <!-- ======================= BACK TO TOP BUTTON ======================= -->
+    <button id="backToTopBtn" class="back-to-top" title="Go to top">
+      <i class="fas fa-arrow-up"></i>
+    </button>
+
+  </div>
+
+  <!-- External JavaScript -->
+<script src="script.js?v=5"></script>
+</body>
+</html>
