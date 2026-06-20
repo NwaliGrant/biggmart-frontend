@@ -1,27 +1,24 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Connected to deployed backend
+ * ✅ Connected to deployed backend with CORS support
  */
 
 // ======================= CONFIGURATION =======================
-// 👇 CHANGE THIS TO YOUR BACKEND URL
-const BACKEND_URL = 'http://biggmart-backend.onrender.com';
+const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
 
 console.log(`🔗 Dashboard connected to: ${BACKEND_URL}`);
 
 // ======================= ULTIMATE PROTECTION =======================
 if (window._DASHBOARD_LOADED) {
-    console.log('🚫 Dashboard already loaded! Skipping...');
+    console.log('🚫 Dashboard already loaded!');
     throw new Error('Dashboard already loaded!');
 }
 window._DASHBOARD_LOADED = true;
-console.log('✅ Dashboard loading for the first time...');
+console.log('✅ Dashboard loading...');
 
 let isLoading = false;
 let dataLoaded = false;
-let buttonClickCount = 0;
-const MAX_BUTTON_CLICKS = 1;
 
 // ======================= PAGE DETECTION =======================
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -57,6 +54,7 @@ if (currentPage === 'index.html' || currentPage === '') {
                 errorEl.textContent = data.message || 'Invalid credentials';
             }
         } catch (error) {
+            console.error('Login error:', error);
             errorEl.style.display = 'block';
             errorEl.textContent = 'Network error. Please try again.';
         } finally {
@@ -91,6 +89,28 @@ function getHeaders() {
     };
 }
 
+// ======================= FETCH WITH ERROR HANDLING =======================
+async function fetchAPI(endpoint, options = {}) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error(`❌ API Error ${endpoint}:`, error);
+        throw error;
+    }
+}
+
 // ======================= DASHBOARD =======================
 if (currentPage === 'dashboard.html' && !dataLoaded) {
     console.log('📊 Loading dashboard...');
@@ -98,17 +118,13 @@ if (currentPage === 'dashboard.html' && !dataLoaded) {
 }
 
 async function loadDashboard() {
-    if (dataLoaded || isLoading) {
-        console.log('⏭️ Dashboard already loaded or loading...');
-        return;
-    }
+    if (dataLoaded || isLoading) return;
     
     console.log('🔄 Loading dashboard...');
     isLoading = true;
     
     try {
-        const statsResponse = await fetch(`${API_URL}/stats`);
-        const statsData = await statsResponse.json();
+        const statsData = await fetchAPI('/stats');
         if (statsData.success) {
             document.getElementById('totalProducts').textContent = statsData.data.total_products || 0;
             document.getElementById('totalSoldOut').textContent = statsData.data.total_sold_out || 0;
@@ -116,8 +132,7 @@ async function loadDashboard() {
             document.getElementById('totalCustomers').textContent = statsData.data.total_customers || 0;
         }
         
-        const productsResponse = await fetch(`${API_URL}/products`);
-        const productsData = await productsResponse.json();
+        const productsData = await fetchAPI('/products');
         if (productsData.success) {
             const recent = productsData.data.slice(0, 5);
             const tbody = document.getElementById('recentProducts');
@@ -140,8 +155,13 @@ async function loadDashboard() {
         console.log('✅ Dashboard loaded successfully!');
         
     } catch (error) {
-        console.error('❌ Error loading dashboard:', error);
-        alert('Error loading dashboard. Make sure backend is running.');
+        console.error('❌ Dashboard error:', error);
+        // Show error message but don't block
+        document.querySelector('.stats-grid')?.insertAdjacentHTML('afterbegin', `
+            <div style="grid-column:1/-1;background:#fff3cd;color:#856404;padding:15px;border-radius:8px;text-align:center;">
+                ⚠️ Could not connect to backend. Please make sure the server is running.
+            </div>
+        `);
     } finally {
         isLoading = false;
     }
@@ -154,17 +174,13 @@ if (currentPage === 'products.html' && !dataLoaded) {
 }
 
 async function loadProducts() {
-    if (dataLoaded || isLoading) {
-        console.log('⏭️ Products already loaded or loading...');
-        return;
-    }
+    if (dataLoaded || isLoading) return;
     
     console.log('🔄 Loading products...');
     isLoading = true;
     
     try {
-        const response = await fetch(`${API_URL}/products`);
-        const data = await response.json();
+        const data = await fetchAPI('/products');
         const tbody = document.getElementById('productsTableBody');
         
         if (data.success && data.data.length > 0) {
@@ -188,8 +204,7 @@ async function loadProducts() {
         dataLoaded = true;
         console.log('✅ Products loaded successfully!');
     } catch (error) {
-        console.error('❌ Error loading products:', error);
-        alert('Error loading products. Make sure backend is running.');
+        console.error('❌ Products error:', error);
     } finally {
         isLoading = false;
     }
@@ -197,7 +212,7 @@ async function loadProducts() {
 
 // ======================= PRODUCT CRUD =======================
 if (currentPage === 'products.html') {
-    document.getElementById('addProductBtn')?.addEventListener('click', function(e) {
+    document.getElementById('addProductBtn')?.addEventListener('click', function() {
         if (this.disabled) return;
         this.disabled = true;
         setTimeout(() => { this.disabled = false; }, 500);
@@ -270,8 +285,7 @@ async function editProduct(id) {
     isLoading = true;
     
     try {
-        const response = await fetch(`${API_URL}/products/${id}`);
-        const data = await response.json();
+        const data = await fetchAPI(`/products/${id}`);
         if (data.success) {
             const p = data.data;
             document.getElementById('productModalTitle').textContent = 'Edit Product';
@@ -339,8 +353,7 @@ async function loadHeroImages() {
     isLoading = true;
     
     try {
-        const response = await fetch(`${API_URL}/hero`);
-        const data = await response.json();
+        const data = await fetchAPI('/hero');
         const grid = document.getElementById('heroGrid');
         
         if (data.success && data.data.length > 0) {
@@ -364,133 +377,9 @@ async function loadHeroImages() {
         dataLoaded = true;
         console.log('✅ Hero images loaded successfully!');
     } catch (error) {
-        console.error('❌ Error loading hero images:', error);
+        console.error('❌ Hero images error:', error);
     } finally {
         isLoading = false;
-    }
-}
-
-// ======================= HERO CRUD =======================
-if (currentPage === 'hero.html') {
-    document.getElementById('addHeroBtn')?.addEventListener('click', function() {
-        if (this.disabled) return;
-        this.disabled = true;
-        setTimeout(() => { this.disabled = false; }, 500);
-        
-        document.getElementById('heroModalTitle').textContent = 'Add Hero Image';
-        document.getElementById('heroId').value = '';
-        document.getElementById('heroForm').reset();
-        document.getElementById('currentHeroPreview').innerHTML = '';
-        document.getElementById('heroModal').style.display = 'flex';
-    });
-
-    document.getElementById('closeHeroModal')?.addEventListener('click', function() {
-        document.getElementById('heroModal').style.display = 'none';
-    });
-
-    document.getElementById('cancelHeroModal')?.addEventListener('click', function() {
-        document.getElementById('heroModal').style.display = 'none';
-    });
-
-    document.getElementById('heroForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (isLoading) return;
-        if (this.dataset.submitting === 'true') return;
-        this.dataset.submitting = 'true';
-        isLoading = true;
-        
-        const id = document.getElementById('heroId').value;
-        const formData = new FormData();
-        formData.append('title', document.getElementById('heroTitle').value);
-        formData.append('subtitle', document.getElementById('heroSubtitle').value);
-        
-        const imageFile = document.getElementById('heroImage').files[0];
-        if (imageFile) formData.append('image', imageFile);
-        
-        try {
-            const url = id ? `${API_URL}/hero/${id}` : `${API_URL}/hero`;
-            const method = id ? 'PUT' : 'POST';
-            
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
-                body: formData
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                Swal.fire('Success!', id ? 'Hero image updated!' : 'Hero image added!', 'success');
-                document.getElementById('heroModal').style.display = 'none';
-                dataLoaded = false;
-                setTimeout(() => loadHeroImages(), 300);
-            } else {
-                Swal.fire('Error!', data.message || 'Something went wrong', 'error');
-            }
-        } catch (error) {
-            console.error('Hero save error:', error);
-            Swal.fire('Error!', 'Network error. Please try again.', 'error');
-        } finally {
-            isLoading = false;
-            this.dataset.submitting = 'false';
-        }
-    });
-}
-
-async function editHero(id) {
-    if (isLoading) return;
-    isLoading = true;
-    
-    try {
-        const response = await fetch(`${API_URL}/hero/${id}`);
-        const data = await response.json();
-        if (data.success) {
-            const h = data.data;
-            document.getElementById('heroModalTitle').textContent = 'Edit Hero Image';
-            document.getElementById('heroId').value = h.id;
-            document.getElementById('heroTitle').value = h.title || '';
-            document.getElementById('heroSubtitle').value = h.subtitle || '';
-            document.getElementById('currentHeroPreview').innerHTML = `<img src="${BACKEND_URL}${h.image_url}" style="max-width: 150px; border-radius: 8px;">`;
-            document.getElementById('heroModal').style.display = 'flex';
-        }
-    } catch (error) {
-        console.error('Edit hero error:', error);
-        Swal.fire('Error!', 'Failed to load hero details', 'error');
-    } finally {
-        isLoading = false;
-    }
-}
-
-async function deleteHero(id) {
-    if (isLoading) return;
-    
-    const result = await Swal.fire({
-        title: 'Delete Hero Image?',
-        text: 'This action cannot be undone!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#c62828',
-        confirmButtonText: 'Yes, delete'
-    });
-    
-    if (result.isConfirmed) {
-        isLoading = true;
-        try {
-            const response = await fetch(`${API_URL}/hero/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
-            });
-            const data = await response.json();
-            if (data.success) {
-                Swal.fire('Deleted!', 'Hero image has been deleted.', 'success');
-                dataLoaded = false;
-                setTimeout(() => loadHeroImages(), 300);
-            }
-        } catch (error) {
-            console.error('Delete hero error:', error);
-            Swal.fire('Error!', 'Failed to delete hero image', 'error');
-        } finally {
-            isLoading = false;
-        }
     }
 }
 
@@ -507,8 +396,7 @@ async function loadTestimonials() {
     isLoading = true;
     
     try {
-        const response = await fetch(`${API_URL}/testimonials`);
-        const data = await response.json();
+        const data = await fetchAPI('/testimonials');
         const tbody = document.getElementById('testimonialsTableBody');
         
         if (data.success && data.data.length > 0) {
@@ -531,133 +419,9 @@ async function loadTestimonials() {
         dataLoaded = true;
         console.log('✅ Testimonials loaded successfully!');
     } catch (error) {
-        console.error('❌ Error loading testimonials:', error);
+        console.error('❌ Testimonials error:', error);
     } finally {
         isLoading = false;
-    }
-}
-
-// ======================= TESTIMONIAL CRUD =======================
-if (currentPage === 'testimonials.html') {
-    document.getElementById('addTestimonialBtn')?.addEventListener('click', function() {
-        if (this.disabled) return;
-        this.disabled = true;
-        setTimeout(() => { this.disabled = false; }, 500);
-        
-        document.getElementById('testimonialModalTitle').textContent = 'Add Testimonial';
-        document.getElementById('testimonialId').value = '';
-        document.getElementById('testimonialForm').reset();
-        document.getElementById('testimonialModal').style.display = 'flex';
-    });
-
-    document.getElementById('closeTestimonialModal')?.addEventListener('click', function() {
-        document.getElementById('testimonialModal').style.display = 'none';
-    });
-
-    document.getElementById('cancelTestimonialModal')?.addEventListener('click', function() {
-        document.getElementById('testimonialModal').style.display = 'none';
-    });
-
-    document.getElementById('testimonialForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (isLoading) return;
-        if (this.dataset.submitting === 'true') return;
-        this.dataset.submitting = 'true';
-        isLoading = true;
-        
-        const id = document.getElementById('testimonialId').value;
-        const data = {
-            customer_name: document.getElementById('testimonialName').value,
-            location: document.getElementById('testimonialLocation').value,
-            content: document.getElementById('testimonialContent').value,
-            rating: parseInt(document.getElementById('testimonialRating').value)
-        };
-        
-        try {
-            const url = id ? `${API_URL}/testimonials/${id}` : `${API_URL}/testimonials`;
-            const method = id ? 'PUT' : 'POST';
-            
-            const response = await fetch(url, {
-                method: method,
-                headers: getHeaders(),
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                Swal.fire('Success!', id ? 'Testimonial updated!' : 'Testimonial added!', 'success');
-                document.getElementById('testimonialModal').style.display = 'none';
-                dataLoaded = false;
-                setTimeout(() => loadTestimonials(), 300);
-            } else {
-                Swal.fire('Error!', result.message || 'Something went wrong', 'error');
-            }
-        } catch (error) {
-            console.error('Testimonial save error:', error);
-            Swal.fire('Error!', 'Network error. Please try again.', 'error');
-        } finally {
-            isLoading = false;
-            this.dataset.submitting = 'false';
-        }
-    });
-}
-
-async function editTestimonial(id) {
-    if (isLoading) return;
-    isLoading = true;
-    
-    try {
-        const response = await fetch(`${API_URL}/testimonials/${id}`);
-        const data = await response.json();
-        if (data.success) {
-            const t = data.data;
-            document.getElementById('testimonialModalTitle').textContent = 'Edit Testimonial';
-            document.getElementById('testimonialId').value = t.id;
-            document.getElementById('testimonialName').value = t.customer_name;
-            document.getElementById('testimonialLocation').value = t.location || '';
-            document.getElementById('testimonialContent').value = t.content;
-            document.getElementById('testimonialRating').value = t.rating;
-            document.getElementById('testimonialModal').style.display = 'flex';
-        }
-    } catch (error) {
-        console.error('Edit testimonial error:', error);
-        Swal.fire('Error!', 'Failed to load testimonial details', 'error');
-    } finally {
-        isLoading = false;
-    }
-}
-
-async function deleteTestimonial(id) {
-    if (isLoading) return;
-    
-    const result = await Swal.fire({
-        title: 'Delete Testimonial?',
-        text: 'This action cannot be undone!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#c62828',
-        confirmButtonText: 'Yes, delete'
-    });
-    
-    if (result.isConfirmed) {
-        isLoading = true;
-        try {
-            const response = await fetch(`${API_URL}/testimonials/${id}`, {
-                method: 'DELETE',
-                headers: getHeaders()
-            });
-            const data = await response.json();
-            if (data.success) {
-                Swal.fire('Deleted!', 'Testimonial has been deleted.', 'success');
-                dataLoaded = false;
-                setTimeout(() => loadTestimonials(), 300);
-            }
-        } catch (error) {
-            console.error('Delete testimonial error:', error);
-            Swal.fire('Error!', 'Failed to delete testimonial', 'error');
-        } finally {
-            isLoading = false;
-        }
     }
 }
 
@@ -674,8 +438,7 @@ async function loadStats() {
     isLoading = true;
     
     try {
-        const response = await fetch(`${API_URL}/stats`);
-        const data = await response.json();
+        const data = await fetchAPI('/stats');
         if (data.success) {
             document.getElementById('editCustomers').value = data.data.total_customers || 0;
             document.getElementById('editProducts').value = data.data.total_products || 0;
@@ -686,7 +449,7 @@ async function loadStats() {
         dataLoaded = true;
         console.log('✅ Stats loaded successfully!');
     } catch (error) {
-        console.error('❌ Error loading stats:', error);
+        console.error('❌ Stats error:', error);
     } finally {
         isLoading = false;
     }
@@ -758,5 +521,5 @@ document.getElementById('searchProducts')?.addEventListener('input', function() 
     });
 });
 
-console.log(`✅ Dashboard initialized successfully on ${currentPage}!`);
+console.log(`✅ Dashboard initialized on ${currentPage}!`);
 console.log(`📡 Backend: ${BACKEND_URL}`);
