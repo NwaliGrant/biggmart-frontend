@@ -1,10 +1,11 @@
 /**
- * THE BIGGMART - PRODUCTION VERSION
+ * THE BIGGMART - PRODUCTION VERSION WITH CAROUSEL
  * ✅ Connected to deployed backend with HTTPS
+ * ✅ Hero carousel working (swipe + auto-rotate)
+ * ✅ No API spam
  */
 
 // ======================= CONFIG =======================
-// ✅ USE HTTPS!
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -18,6 +19,10 @@ for (let i = 0; i < 20000; i++) {
 
 let loaded = false;
 let loading = false;
+let heroImages = [];
+let currentHeroIndex = 0;
+let autoRotateInterval = null;
+let isHeroPaused = false;
 
 // ======================= DOM ELEMENTS =======================
 const spinner = document.getElementById('loadingSpinner');
@@ -45,6 +50,161 @@ async function fetchData(endpoint) {
     }
 }
 
+// ======================= BUILD IMAGE URL =======================
+function buildImageUrl(imagePath) {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return imagePath;
+    }
+    const cleanPath = imagePath.replace(/^\/+/, '');
+    return `${BACKEND_URL}/${cleanPath}`;
+}
+
+// ======================= HERO CAROUSEL FUNCTIONS =======================
+function goToHeroSlide(index) {
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.dot');
+    if (!slides.length) return;
+    
+    slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === index);
+    });
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+    currentHeroIndex = index;
+}
+
+function nextHeroSlide() {
+    if (heroImages.length <= 1) return;
+    const nextIndex = (currentHeroIndex + 1) % heroImages.length;
+    goToHeroSlide(nextIndex);
+}
+
+function prevHeroSlide() {
+    if (heroImages.length <= 1) return;
+    const prevIndex = (currentHeroIndex - 1 + heroImages.length) % heroImages.length;
+    goToHeroSlide(prevIndex);
+}
+
+function startAutoRotate() {
+    if (autoRotateInterval) {
+        clearInterval(autoRotateInterval);
+        autoRotateInterval = null;
+    }
+    if (heroImages.length > 1 && !isHeroPaused) {
+        autoRotateInterval = setInterval(nextHeroSlide, 5000);
+    }
+}
+
+function pauseAutoRotate() {
+    isHeroPaused = true;
+    if (autoRotateInterval) {
+        clearInterval(autoRotateInterval);
+        autoRotateInterval = null;
+    }
+}
+
+function resumeAutoRotate() {
+    isHeroPaused = false;
+    if (heroImages.length > 1) {
+        startAutoRotate();
+    }
+}
+
+function resetAutoRotate() {
+    pauseAutoRotate();
+    setTimeout(resumeAutoRotate, 200);
+}
+
+function initializeHeroCarousel() {
+    if (heroImages.length <= 1) {
+        console.log('ℹ️ Only 1 hero image, carousel disabled');
+        return;
+    }
+    
+    console.log('🔄 Initializing hero carousel...');
+    startAutoRotate();
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') {
+            prevHeroSlide();
+            resetAutoRotate();
+        } else if (e.key === 'ArrowRight') {
+            nextHeroSlide();
+            resetAutoRotate();
+        }
+    });
+    
+    // Touch swipe support
+    const heroContainer = document.querySelector('.hero-visual');
+    if (heroContainer) {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        heroContainer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        heroContainer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextHeroSlide();
+                } else {
+                    prevHeroSlide();
+                }
+                resetAutoRotate();
+            }
+        }, { passive: true });
+        
+        // Mouse drag support
+        let mouseDown = false;
+        let mouseStartX = 0;
+        
+        heroContainer.addEventListener('mousedown', function(e) {
+            mouseDown = true;
+            mouseStartX = e.screenX;
+        });
+        
+        heroContainer.addEventListener('mouseup', function(e) {
+            if (mouseDown) {
+                mouseDown = false;
+                const diff = mouseStartX - e.screenX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) {
+                        nextHeroSlide();
+                    } else {
+                        prevHeroSlide();
+                    }
+                    resetAutoRotate();
+                }
+            }
+        });
+        
+        heroContainer.addEventListener('mouseleave', function() {
+            mouseDown = false;
+        });
+        
+        // Pause on hover
+        heroContainer.addEventListener('mouseenter', pauseAutoRotate);
+        heroContainer.addEventListener('mouseleave', resumeAutoRotate);
+    }
+    
+    // Dot click navigation
+    document.querySelectorAll('.dot').forEach(dot => {
+        dot.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            goToHeroSlide(index);
+            resetAutoRotate();
+        });
+    });
+    
+    console.log('✅ Hero carousel initialized!');
+}
+
 // ======================= LOAD DATA =======================
 async function loadRealData() {
     if (loaded || loading) return;
@@ -60,19 +220,21 @@ async function loadRealData() {
             fetchData('/stats')
         ]);
         
-        if (heroData?.success && heroData.data?.length) {
+        // Hero images
+        if (heroData?.success && heroData.data && heroData.data.length > 0) {
+            heroImages = heroData.data;
             renderHero(heroData.data);
         } else {
             renderHero(getFallbackHero());
         }
         
-        if (productsData?.success && productsData.data?.length) {
+        if (productsData?.success && productsData.data && productsData.data.length > 0) {
             renderProducts(productsData.data);
         } else {
             renderProducts(getFallbackProducts());
         }
         
-        if (testimonialsData?.success && testimonialsData.data?.length) {
+        if (testimonialsData?.success && testimonialsData.data && testimonialsData.data.length > 0) {
             renderTestimonials(testimonialsData.data);
         } else {
             renderTestimonials(getFallbackTestimonials());
@@ -87,10 +249,15 @@ async function loadRealData() {
         loaded = true;
         console.log('✅ All real data loaded!');
         
+        // Show content
         if (spinner) spinner.style.display = 'none';
         if (mainContent) mainContent.style.display = 'block';
         
-        initFeatures();
+        // ✅ Initialize carousel AFTER rendering
+        setTimeout(() => {
+            initializeHeroCarousel();
+            initFeatures();
+        }, 100);
         
     } catch (error) {
         console.error('❌ Load error:', error);
@@ -101,7 +268,11 @@ async function loadRealData() {
         
         if (spinner) spinner.style.display = 'none';
         if (mainContent) mainContent.style.display = 'block';
-        initFeatures();
+        
+        setTimeout(() => {
+            initializeHeroCarousel();
+            initFeatures();
+        }, 100);
     } finally {
         loading = false;
     }
@@ -111,20 +282,23 @@ async function loadRealData() {
 function getFallbackHero() {
     return [
         { image_url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=500&h=500&fit=crop', title: 'All You Want in One Bigg Place', subtitle: 'Shop the latest gadgets and electronics' },
-        { image_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&h=500&fit=crop', title: 'Premium Electronics', subtitle: 'Quality products at competitive prices' }
+        { image_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500&h=500&fit=crop', title: 'Premium Electronics', subtitle: 'Quality products at competitive prices' },
+        { image_url: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&h=500&fit=crop', title: 'Home Essentials', subtitle: 'Everything you need for your home' }
     ];
 }
 
 function getFallbackProducts() {
     return [
         { name: 'iPhone 15 Pro', category: 'gadgets', price: '₦850,000', description: 'Latest iPhone with 128GB storage', is_sold_out: false, image_url: 'https://images.unsplash.com/photo-1592899677977-9e10ca588f3e?w=200&h=200&fit=crop' },
-        { name: 'MacBook Pro 16"', category: 'gadgets', price: '₦1,200,000', description: 'M3 Pro chip, 18GB RAM', is_sold_out: false, image_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop' }
+        { name: 'MacBook Pro 16"', category: 'gadgets', price: '₦1,200,000', description: 'M3 Pro chip, 18GB RAM', is_sold_out: false, image_url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop' },
+        { name: 'Samsung Galaxy S24', category: 'gadgets', price: '₦750,000', description: 'Premium Android smartphone', is_sold_out: false, image_url: 'https://images.unsplash.com/photo-1592899677977-9e10ca588f3e?w=200&h=200&fit=crop' }
     ];
 }
 
 function getFallbackTestimonials() {
     return [
-        { customer_name: 'Oluwaseun Adebayo', location: 'Lagos, Nigeria', content: 'Great service!', rating: 5 }
+        { customer_name: 'Oluwaseun Adebayo', location: 'Lagos, Nigeria', content: 'Great service!', rating: 5 },
+        { customer_name: 'Chioma Eze', location: 'Port Harcourt, Nigeria', content: 'Best online shopping experience!', rating: 5 }
     ];
 }
 
@@ -136,13 +310,21 @@ function getFallbackStats() {
 function renderHero(images) {
     if (!heroSlider) return;
     const valid = images.filter(img => img.image_url);
-    if (!valid.length) return;
-    heroSlider.innerHTML = valid.map((img, i) => `
-        <div class="hero-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
-            <img src="${img.image_url.startsWith('http') ? img.image_url : BACKEND_URL + img.image_url}" alt="${img.title || 'Hero'}" class="hero-image" onerror="this.style.display='none'">
-            ${img.title ? `<div class="hero-caption"><h3>${img.title}</h3>${img.subtitle ? `<p>${img.subtitle}</p>` : ''}</div>` : ''}
-        </div>
-    `).join('');
+    if (!valid.length) {
+        heroSlider.innerHTML = `<div class="hero-placeholder"><p>No hero images</p></div>`;
+        return;
+    }
+    
+    heroSlider.innerHTML = valid.map((img, i) => {
+        const imageUrl = buildImageUrl(img.image_url);
+        return `
+            <div class="hero-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+                <img src="${imageUrl}" alt="${img.title || 'Hero'}" class="hero-image" onerror="this.style.display='none'">
+                ${img.title ? `<div class="hero-caption"><h3>${img.title}</h3>${img.subtitle ? `<p>${img.subtitle}</p>` : ''}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+    
     if (heroDots) {
         heroDots.innerHTML = valid.map((_, i) => `<span class="dot ${i === 0 ? 'active' : ''}" data-index="${i}"></span>`).join('');
     }
@@ -151,13 +333,7 @@ function renderHero(images) {
 function renderProducts(products) {
     if (!carouselTrack) return;
     carouselTrack.innerHTML = products.map(p => {
-        let imageUrl = p.image_url;
-        if (imageUrl && !imageUrl.startsWith('http')) {
-            imageUrl = BACKEND_URL + imageUrl;
-        }
-        if (!imageUrl) {
-            imageUrl = `https://picsum.photos/seed/${p.id || Math.random()}/200/200`;
-        }
+        const imageUrl = p.image_url ? buildImageUrl(p.image_url) : `https://picsum.photos/seed/${p.id || Math.random()}/200/200`;
         return `
             <div class="product-card" data-category="${p.category}" data-price="${p.price}" data-name="${p.name}">
                 <div class="product-image">
@@ -206,7 +382,7 @@ function initFeatures() {
         });
     });
 
-    // Carousel
+    // Carousel navigation
     if (prevBtn && nextBtn && carouselTrack) {
         const scroll = 300;
         prevBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: -scroll, behavior: 'smooth' }));
@@ -295,10 +471,10 @@ function initFeatures() {
 
 // ======================= START =======================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Starting production version...');
+    console.log('🚀 Starting production version with carousel...');
     setTimeout(loadRealData, 200);
 });
 
-console.log('✅ Production script loaded!');
+console.log('✅ Production script loaded with carousel!');
 console.log(`📡 Backend URL: ${BACKEND_URL}`);
 console.log(`📡 API URL: ${API_URL}`);
