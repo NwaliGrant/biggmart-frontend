@@ -1,15 +1,11 @@
 /**
  * THE BIGGMART - PRODUCTION VERSION WITH CAROUSEL
- * ✅ Connected to deployed backend with HTTPS
- * ✅ Hero carousel working (swipe + auto-rotate)
- * ✅ No API spam
+ * ✅ Clean console - no backend URLs exposed
  */
 
 // ======================= CONFIG =======================
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
-
-console.log(`🔗 Connected to backend: ${BACKEND_URL}`);
 
 // ======================= KILL ALL INTERVALS =======================
 for (let i = 0; i < 20000; i++) {
@@ -38,18 +34,6 @@ const backToTopBtn = document.getElementById('backToTopBtn');
 const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const navMenu = document.getElementById('navMenu');
 
-// ======================= FETCH DATA =======================
-async function fetchData(endpoint) {
-    try {
-        const response = await fetch(`${API_URL}${endpoint}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error(`❌ Error fetching ${endpoint}:`, error);
-        return null;
-    }
-}
-
 // ======================= BUILD IMAGE URL =======================
 function buildImageUrl(imagePath) {
     if (!imagePath) return '';
@@ -58,6 +42,18 @@ function buildImageUrl(imagePath) {
     }
     const cleanPath = imagePath.replace(/^\/+/, '');
     return `${BACKEND_URL}/${cleanPath}`;
+}
+
+// ======================= FETCH DATA =======================
+async function fetchData(endpoint) {
+    try {
+        const response = await fetch(`${API_URL}${endpoint}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error(`❌ Error fetching ${endpoint}:`, error.message);
+        return null;
+    }
 }
 
 // ======================= HERO CAROUSEL FUNCTIONS =======================
@@ -118,15 +114,10 @@ function resetAutoRotate() {
 }
 
 function initializeHeroCarousel() {
-    if (heroImages.length <= 1) {
-        console.log('ℹ️ Only 1 hero image, carousel disabled');
-        return;
-    }
+    if (heroImages.length <= 1) return;
     
-    console.log('🔄 Initializing hero carousel...');
     startAutoRotate();
     
-    // Keyboard navigation
     document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowLeft') {
             prevHeroSlide();
@@ -137,7 +128,6 @@ function initializeHeroCarousel() {
         }
     });
     
-    // Touch swipe support
     const heroContainer = document.querySelector('.hero-visual');
     if (heroContainer) {
         let touchStartX = 0;
@@ -160,7 +150,6 @@ function initializeHeroCarousel() {
             }
         }, { passive: true });
         
-        // Mouse drag support
         let mouseDown = false;
         let mouseStartX = 0;
         
@@ -188,12 +177,10 @@ function initializeHeroCarousel() {
             mouseDown = false;
         });
         
-        // Pause on hover
         heroContainer.addEventListener('mouseenter', pauseAutoRotate);
         heroContainer.addEventListener('mouseleave', resumeAutoRotate);
     }
     
-    // Dot click navigation
     document.querySelectorAll('.dot').forEach(dot => {
         dot.addEventListener('click', function() {
             const index = parseInt(this.dataset.index);
@@ -201,8 +188,6 @@ function initializeHeroCarousel() {
             resetAutoRotate();
         });
     });
-    
-    console.log('✅ Hero carousel initialized!');
 }
 
 // ======================= LOAD DATA =======================
@@ -210,7 +195,6 @@ async function loadRealData() {
     if (loaded || loading) return;
     
     loading = true;
-    console.log('🔄 Loading real data from API...');
     
     try {
         const [heroData, productsData, testimonialsData, statsData] = await Promise.all([
@@ -220,7 +204,6 @@ async function loadRealData() {
             fetchData('/stats')
         ]);
         
-        // Hero images
         if (heroData?.success && heroData.data && heroData.data.length > 0) {
             heroImages = heroData.data;
             renderHero(heroData.data);
@@ -247,20 +230,17 @@ async function loadRealData() {
         }
         
         loaded = true;
-        console.log('✅ All real data loaded!');
         
-        // Show content
         if (spinner) spinner.style.display = 'none';
         if (mainContent) mainContent.style.display = 'block';
         
-        // ✅ Initialize carousel AFTER rendering
         setTimeout(() => {
             initializeHeroCarousel();
             initFeatures();
         }, 100);
         
     } catch (error) {
-        console.error('❌ Load error:', error);
+        console.error('❌ Load error:', error.message);
         renderHero(getFallbackHero());
         renderProducts(getFallbackProducts());
         renderTestimonials(getFallbackTestimonials());
@@ -370,7 +350,6 @@ function updateStats(stats) {
 
 // ======================= FEATURES =======================
 function initFeatures() {
-    // Category filters
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             filterBtns.forEach(b => b.classList.remove('active'));
@@ -382,14 +361,12 @@ function initFeatures() {
         });
     });
 
-    // Carousel navigation
     if (prevBtn && nextBtn && carouselTrack) {
         const scroll = 300;
         prevBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: -scroll, behavior: 'smooth' }));
         nextBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: scroll, behavior: 'smooth' }));
     }
 
-    // Back to top
     if (backToTopBtn) {
         window.addEventListener('scroll', () => {
             backToTopBtn.classList.toggle('show', window.scrollY > 300);
@@ -397,7 +374,6 @@ function initFeatures() {
         backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
 
-    // Mobile menu
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -424,7 +400,6 @@ function initFeatures() {
         });
     }
 
-    // Smooth scrolling
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
@@ -439,7 +414,6 @@ function initFeatures() {
         });
     });
 
-    // Active nav highlight
     const sections = document.querySelectorAll('section[id]');
     const navItems = document.querySelectorAll('.nav-link');
     function highlight() {
@@ -464,17 +438,10 @@ function initFeatures() {
     window.addEventListener('scroll', highlight);
     window.addEventListener('load', highlight);
 
-    // Current year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
-    console.log('✅ Features initialized!');
 }
 
 // ======================= START =======================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Starting production version with carousel...');
     setTimeout(loadRealData, 200);
 });
-
-console.log('✅ Production script loaded with carousel!');
-console.log(`📡 Backend URL: ${BACKEND_URL}`);
-console.log(`📡 API URL: ${API_URL}`);
