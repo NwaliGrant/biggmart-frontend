@@ -1,9 +1,10 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Connected to deployed backend with CORS support
+ * ✅ Fixed HTTPS, Edit Product, and Placeholder Images
  */
 
 // ======================= CONFIGURATION =======================
+// ✅ USE HTTPS!
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -156,12 +157,6 @@ async function loadDashboard() {
         
     } catch (error) {
         console.error('❌ Dashboard error:', error);
-        // Show error message but don't block
-        document.querySelector('.stats-grid')?.insertAdjacentHTML('afterbegin', `
-            <div style="grid-column:1/-1;background:#fff3cd;color:#856404;padding:15px;border-radius:8px;text-align:center;">
-                ⚠️ Could not connect to backend. Please make sure the server is running.
-            </div>
-        `);
     } finally {
         isLoading = false;
     }
@@ -186,7 +181,7 @@ async function loadProducts() {
         if (data.success && data.data.length > 0) {
             tbody.innerHTML = data.data.map(p => `
                 <tr>
-                    <td><img src="${p.image_url ? BACKEND_URL + p.image_url : 'https://via.placeholder.com/50'}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://via.placeholder.com/50'"></td>
+                    <td><img src="${p.image_url ? BACKEND_URL + p.image_url : `https://picsum.photos/seed/${p.id || Math.random()}/50/50`}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${p.id || Math.random()}/50/50'"></td>
                     <td><strong>${p.name}</strong></td>
                     <td>${p.category}</td>
                     <td>${p.price}</td>
@@ -280,8 +275,16 @@ if (currentPage === 'products.html') {
     });
 }
 
+// ✅ FIXED: Edit Product with proper ID handling
 async function editProduct(id) {
     if (isLoading) return;
+    if (!id) {
+        console.error('❌ No product ID provided');
+        Swal.fire('Error!', 'Invalid product ID', 'error');
+        return;
+    }
+    
+    console.log(`✏️ Editing product: ${id}`);
     isLoading = true;
     
     try {
@@ -359,7 +362,7 @@ async function loadHeroImages() {
         if (data.success && data.data.length > 0) {
             grid.innerHTML = data.data.map(h => `
                 <div class="hero-card">
-                    <img src="${h.image_url.startsWith('http') ? h.image_url : BACKEND_URL + h.image_url}" alt="${h.title || 'Hero image'}" onerror="this.src='https://via.placeholder.com/250x200?text=No+Image'">
+                    <img src="${h.image_url.startsWith('http') ? h.image_url : BACKEND_URL + h.image_url}" alt="${h.title || 'Hero image'}" onerror="this.src='https://picsum.photos/250/200?random=${Math.random()}'">
                     <div class="hero-card-info">
                         <h4>${h.title || 'Untitled'}</h4>
                         <p>${h.subtitle || ''}</p>
@@ -380,6 +383,68 @@ async function loadHeroImages() {
         console.error('❌ Hero images error:', error);
     } finally {
         isLoading = false;
+    }
+}
+
+async function editHero(id) {
+    if (isLoading) return;
+    if (!id) {
+        Swal.fire('Error!', 'Invalid hero ID', 'error');
+        return;
+    }
+    
+    isLoading = true;
+    
+    try {
+        const data = await fetchAPI(`/hero/${id}`);
+        if (data.success) {
+            const h = data.data;
+            document.getElementById('heroModalTitle').textContent = 'Edit Hero Image';
+            document.getElementById('heroId').value = h.id;
+            document.getElementById('heroTitle').value = h.title || '';
+            document.getElementById('heroSubtitle').value = h.subtitle || '';
+            document.getElementById('currentHeroPreview').innerHTML = `<img src="${BACKEND_URL}${h.image_url}" style="max-width: 150px; border-radius: 8px;">`;
+            document.getElementById('heroModal').style.display = 'flex';
+        }
+    } catch (error) {
+        console.error('Edit hero error:', error);
+        Swal.fire('Error!', 'Failed to load hero details', 'error');
+    } finally {
+        isLoading = false;
+    }
+}
+
+async function deleteHero(id) {
+    if (isLoading) return;
+    
+    const result = await Swal.fire({
+        title: 'Delete Hero Image?',
+        text: 'This action cannot be undone!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c62828',
+        confirmButtonText: 'Yes, delete'
+    });
+    
+    if (result.isConfirmed) {
+        isLoading = true;
+        try {
+            const response = await fetch(`${API_URL}/hero/${id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('Deleted!', 'Hero image has been deleted.', 'success');
+                dataLoaded = false;
+                setTimeout(() => loadHeroImages(), 300);
+            }
+        } catch (error) {
+            console.error('Delete hero error:', error);
+            Swal.fire('Error!', 'Failed to delete hero image', 'error');
+        } finally {
+            isLoading = false;
+        }
     }
 }
 
@@ -422,6 +487,69 @@ async function loadTestimonials() {
         console.error('❌ Testimonials error:', error);
     } finally {
         isLoading = false;
+    }
+}
+
+async function editTestimonial(id) {
+    if (isLoading) return;
+    if (!id) {
+        Swal.fire('Error!', 'Invalid testimonial ID', 'error');
+        return;
+    }
+    
+    isLoading = true;
+    
+    try {
+        const data = await fetchAPI(`/testimonials/${id}`);
+        if (data.success) {
+            const t = data.data;
+            document.getElementById('testimonialModalTitle').textContent = 'Edit Testimonial';
+            document.getElementById('testimonialId').value = t.id;
+            document.getElementById('testimonialName').value = t.customer_name;
+            document.getElementById('testimonialLocation').value = t.location || '';
+            document.getElementById('testimonialContent').value = t.content;
+            document.getElementById('testimonialRating').value = t.rating;
+            document.getElementById('testimonialModal').style.display = 'flex';
+        }
+    } catch (error) {
+        console.error('Edit testimonial error:', error);
+        Swal.fire('Error!', 'Failed to load testimonial details', 'error');
+    } finally {
+        isLoading = false;
+    }
+}
+
+async function deleteTestimonial(id) {
+    if (isLoading) return;
+    
+    const result = await Swal.fire({
+        title: 'Delete Testimonial?',
+        text: 'This action cannot be undone!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c62828',
+        confirmButtonText: 'Yes, delete'
+    });
+    
+    if (result.isConfirmed) {
+        isLoading = true;
+        try {
+            const response = await fetch(`${API_URL}/testimonials/${id}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('Deleted!', 'Testimonial has been deleted.', 'success');
+                dataLoaded = false;
+                setTimeout(() => loadTestimonials(), 300);
+            }
+        } catch (error) {
+            console.error('Delete testimonial error:', error);
+            Swal.fire('Error!', 'Failed to delete testimonial', 'error');
+        } finally {
+            isLoading = false;
+        }
     }
 }
 
