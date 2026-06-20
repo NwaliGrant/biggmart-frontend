@@ -1,10 +1,11 @@
 /**
  * THE BIGGMART - PRODUCTION VERSION
- * ✅ Connected to deployed backend: http://biggmart-backend.onrender.com
+ * ✅ Connected to deployed backend with HTTPS
  */
 
 // ======================= CONFIG =======================
-const BACKEND_URL = 'http://biggmart-backend.onrender.com';
+// ✅ USE HTTPS!
+const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
 
 console.log(`🔗 Connected to backend: ${BACKEND_URL}`);
