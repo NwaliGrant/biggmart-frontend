@@ -1,6 +1,6 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Fixed: All CRUD operations with proper error handling
+ * ✅ Fixed: Image URLs, duplicate loads, all CRUD operations
  */
 
 // ======================= CONFIGURATION =======================
@@ -23,6 +23,58 @@ let dataLoaded = false;
 // ======================= PAGE DETECTION =======================
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 console.log(`📄 Current page: ${currentPage}`);
+
+// ======================= HELPER: Compress Image =======================
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        if (!file.type.startsWith('image/')) {
+            resolve(file);
+            return;
+        }
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob((blob) => {
+                    const compressedFile = new File([blob], file.name, {
+                        type: 'image/jpeg',
+                        lastModified: Date.now()
+                    });
+                    resolve(compressedFile);
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+}
+
+// ======================= HELPER: Build Image URL =======================
+function buildImageUrl(imagePath) {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return imagePath;
+    }
+    const cleanPath = imagePath.replace(/^\/+/, '');
+    return `${BACKEND_URL}/${cleanPath}`;
+}
 
 // ======================= AUTH =======================
 if (currentPage === 'index.html' || currentPage === '') {
@@ -99,11 +151,9 @@ async function fetchAPI(endpoint, options = {}) {
                 ...options.headers
             }
         });
-        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
         return await response.json();
     } catch (error) {
         console.error(`❌ API Error ${endpoint}:`, error);
@@ -119,7 +169,6 @@ if (currentPage === 'dashboard.html' && !dataLoaded) {
 
 async function loadDashboard() {
     if (dataLoaded || isLoading) return;
-    
     console.log('🔄 Loading dashboard...');
     isLoading = true;
     
@@ -156,7 +205,6 @@ async function loadDashboard() {
         document.getElementById('adminName').textContent = localStorage.getItem('adminName') || 'Admin';
         dataLoaded = true;
         console.log('✅ Dashboard loaded successfully!');
-        
     } catch (error) {
         console.error('❌ Dashboard error:', error);
     } finally {
@@ -185,13 +233,8 @@ async function loadProducts() {
                 const productId = p._id || p.id;
                 let imageUrl = 'https://picsum.photos/seed/' + (productId || Math.random()) + '/50/50';
                 if (p.image_url) {
-                    if (p.image_url.startsWith('http')) {
-                        imageUrl = p.image_url;
-                    } else {
-                        imageUrl = BACKEND_URL + p.image_url;
-                    }
+                    imageUrl = buildImageUrl(p.image_url);
                 }
-                
                 return `
                     <tr>
                         <td><img src="${imageUrl}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${productId || Math.random()}/50/50'"></td>
@@ -214,10 +257,6 @@ async function loadProducts() {
         console.log('✅ Products loaded successfully!');
     } catch (error) {
         console.error('❌ Products error:', error);
-        const tbody = document.getElementById('productsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">Error loading products. Please refresh.</td></tr>`;
-        }
     } finally {
         isLoading = false;
     }
@@ -229,7 +268,6 @@ if (currentPage === 'products.html') {
         if (this.disabled) return;
         this.disabled = true;
         setTimeout(() => { this.disabled = false; }, 500);
-        
         document.getElementById('productModalTitle').textContent = 'Add New Product';
         document.getElementById('productId').value = '';
         document.getElementById('productForm').reset();
@@ -247,9 +285,13 @@ if (currentPage === 'products.html') {
 
     document.getElementById('productForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         if (isLoading) return;
         if (this.dataset.submitting === 'true') return;
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        submitBtn.disabled = true;
         this.dataset.submitting = 'true';
         isLoading = true;
         
@@ -262,18 +304,23 @@ if (currentPage === 'products.html') {
         formData.append('is_sold_out', document.getElementById('productStatus').value);
         
         const imageFile = document.getElementById('productImage').files[0];
-        if (imageFile) formData.append('image', imageFile);
+        if (imageFile) {
+            try {
+                const compressed = await compressImage(imageFile, 300, 300, 0.7);
+                formData.append('image', compressed);
+            } catch (error) {
+                formData.append('image', imageFile);
+            }
+        }
         
         try {
             const url = id ? `${API_URL}/products/${id}` : `${API_URL}/products`;
             const method = id ? 'PUT' : 'POST';
-            
             const response = await fetch(url, {
                 method: method,
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
                 body: formData
             });
-            
             const data = await response.json();
             if (data.success) {
                 Swal.fire('Success!', id ? 'Product updated successfully!' : 'Product added successfully!', 'success');
@@ -289,20 +336,18 @@ if (currentPage === 'products.html') {
         } finally {
             isLoading = false;
             this.dataset.submitting = 'false';
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     });
 }
 
 async function editProduct(id) {
     if (isLoading) return;
-    
     if (!id || id === 'undefined' || id === 'null') {
-        console.error('❌ Invalid product ID:', id);
-        Swal.fire('Error!', 'Invalid product ID. Please refresh and try again.', 'error');
+        Swal.fire('Error!', 'Invalid product ID', 'error');
         return;
     }
-    
-    console.log(`✏️ Editing product: ${id}`);
     isLoading = true;
     
     try {
@@ -316,23 +361,13 @@ async function editProduct(id) {
             document.getElementById('productPrice').value = String(p.price).replace(/[₦,]/g, '');
             document.getElementById('productDescription').value = p.description || '';
             document.getElementById('productStatus').value = p.is_sold_out ? 'true' : 'false';
-            
-            let previewImage = '';
-            if (p.image_url) {
-                if (p.image_url.startsWith('http')) {
-                    previewImage = p.image_url;
-                } else {
-                    previewImage = BACKEND_URL + p.image_url;
-                }
-            }
+            const previewImage = p.image_url ? buildImageUrl(p.image_url) : '';
             document.getElementById('currentImagePreview').innerHTML = previewImage ? `<img src="${previewImage}" style="max-width: 150px; border-radius: 8px;">` : '';
             document.getElementById('productModal').style.display = 'flex';
-        } else {
-            Swal.fire('Error!', 'Product not found', 'error');
         }
     } catch (error) {
         console.error('Edit error:', error);
-        Swal.fire('Error!', 'Failed to load product details. Please refresh and try again.', 'error');
+        Swal.fire('Error!', 'Failed to load product details', 'error');
     } finally {
         isLoading = false;
     }
@@ -340,12 +375,10 @@ async function editProduct(id) {
 
 async function deleteProduct(id) {
     if (isLoading) return;
-    
     if (!id || id === 'undefined' || id === 'null') {
         Swal.fire('Error!', 'Invalid product ID', 'error');
         return;
     }
-    
     const result = await Swal.fire({
         title: 'Delete Product?',
         text: 'This action cannot be undone!',
@@ -354,7 +387,6 @@ async function deleteProduct(id) {
         confirmButtonColor: '#c62828',
         confirmButtonText: 'Yes, delete'
     });
-    
     if (result.isConfirmed) {
         isLoading = true;
         try {
@@ -384,7 +416,15 @@ if (currentPage === 'hero.html' && !dataLoaded) {
 }
 
 async function loadHeroImages() {
-    if (dataLoaded || isLoading) return;
+    // ✅ STRICT CHECK - prevent multiple loads
+    if (dataLoaded) {
+        console.log('✅ Hero images already loaded, skipping...');
+        return;
+    }
+    if (isLoading) {
+        console.log('⏳ Hero images already loading...');
+        return;
+    }
     
     console.log('🔄 Loading hero images...');
     isLoading = true;
@@ -396,13 +436,11 @@ async function loadHeroImages() {
         if (data && data.success && data.data && data.data.length > 0) {
             grid.innerHTML = data.data.map(h => {
                 const hid = h._id || h.id;
-                let imageUrl = h.image_url;
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                    imageUrl = BACKEND_URL + imageUrl;
-                }
+                const imageUrl = h.image_url ? buildImageUrl(h.image_url) : `https://picsum.photos/250/200?random=${Math.random()}`;
                 return `
                     <div class="hero-card">
-                        <img src="${imageUrl || 'https://picsum.photos/250/200?random=' + Math.random()}" alt="${h.title || 'Hero image'}" onerror="this.src='https://picsum.photos/250/200?random=${Math.random()}'">
+                        <img src="${imageUrl}" alt="${h.title || 'Hero image'}" 
+                             onerror="this.src='https://picsum.photos/250/200?random=${Math.random()}'">
                         <div class="hero-card-info">
                             <h4>${h.title || 'Untitled'}</h4>
                             <p>${h.subtitle || ''}</p>
@@ -450,7 +488,6 @@ if (currentPage === 'hero.html') {
         if (this.disabled) return;
         this.disabled = true;
         setTimeout(() => { this.disabled = false; }, 500);
-        
         document.getElementById('heroModalTitle').textContent = 'Add Hero Image';
         document.getElementById('heroId').value = '';
         document.getElementById('heroForm').reset();
@@ -470,6 +507,11 @@ if (currentPage === 'hero.html') {
         e.preventDefault();
         if (isLoading) return;
         if (this.dataset.submitting === 'true') return;
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        submitBtn.disabled = true;
         this.dataset.submitting = 'true';
         isLoading = true;
         
@@ -479,18 +521,23 @@ if (currentPage === 'hero.html') {
         formData.append('subtitle', document.getElementById('heroSubtitle').value);
         
         const imageFile = document.getElementById('heroImage').files[0];
-        if (imageFile) formData.append('image', imageFile);
+        if (imageFile) {
+            try {
+                const compressed = await compressImage(imageFile, 800, 800, 0.7);
+                formData.append('image', compressed);
+            } catch (error) {
+                formData.append('image', imageFile);
+            }
+        }
         
         try {
             const url = id ? `${API_URL}/hero/${id}` : `${API_URL}/hero`;
             const method = id ? 'PUT' : 'POST';
-            
             const response = await fetch(url, {
                 method: method,
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
                 body: formData
             });
-            
             const data = await response.json();
             if (data.success) {
                 Swal.fire('Success!', id ? 'Hero image updated!' : 'Hero image added!', 'success');
@@ -506,6 +553,8 @@ if (currentPage === 'hero.html') {
         } finally {
             isLoading = false;
             this.dataset.submitting = 'false';
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         }
     });
 }
@@ -516,7 +565,6 @@ async function editHero(id) {
         Swal.fire('Error!', 'Invalid hero ID', 'error');
         return;
     }
-    
     isLoading = true;
     
     try {
@@ -527,15 +575,7 @@ async function editHero(id) {
             document.getElementById('heroId').value = h._id || h.id;
             document.getElementById('heroTitle').value = h.title || '';
             document.getElementById('heroSubtitle').value = h.subtitle || '';
-            
-            let previewImage = '';
-            if (h.image_url) {
-                if (h.image_url.startsWith('http')) {
-                    previewImage = h.image_url;
-                } else {
-                    previewImage = BACKEND_URL + h.image_url;
-                }
-            }
+            const previewImage = h.image_url ? buildImageUrl(h.image_url) : '';
             document.getElementById('currentHeroPreview').innerHTML = previewImage ? `<img src="${previewImage}" style="max-width: 150px; border-radius: 8px;">` : '';
             document.getElementById('heroModal').style.display = 'flex';
         }
@@ -549,12 +589,10 @@ async function editHero(id) {
 
 async function deleteHero(id) {
     if (isLoading) return;
-    
     if (!id || id === 'undefined' || id === 'null') {
         Swal.fire('Error!', 'Invalid hero ID', 'error');
         return;
     }
-    
     const result = await Swal.fire({
         title: 'Delete Hero Image?',
         text: 'This action cannot be undone!',
@@ -563,7 +601,6 @@ async function deleteHero(id) {
         confirmButtonColor: '#c62828',
         confirmButtonText: 'Yes, delete'
     });
-    
     if (result.isConfirmed) {
         isLoading = true;
         try {
@@ -594,14 +631,12 @@ if (currentPage === 'testimonials.html' && !dataLoaded) {
 
 async function loadTestimonials() {
     if (dataLoaded || isLoading) return;
-    
     console.log('🔄 Loading testimonials...');
     isLoading = true;
     
     try {
         const data = await fetchAPI('/testimonials');
         const tbody = document.getElementById('testimonialsTableBody');
-        
         if (data.success && data.data && data.data.length > 0) {
             tbody.innerHTML = data.data.map(t => {
                 const tid = t._id || t.id;
@@ -621,15 +656,10 @@ async function loadTestimonials() {
         } else {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No testimonials found</td></tr>`;
         }
-        
         dataLoaded = true;
         console.log('✅ Testimonials loaded successfully!');
     } catch (error) {
         console.error('❌ Testimonials error:', error);
-        const tbody = document.getElementById('testimonialsTableBody');
-        if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">Error loading testimonials. Please refresh.</td></tr>`;
-        }
     } finally {
         isLoading = false;
     }
@@ -641,7 +671,6 @@ if (currentPage === 'testimonials.html') {
         if (this.disabled) return;
         this.disabled = true;
         setTimeout(() => { this.disabled = false; }, 500);
-        
         document.getElementById('testimonialModalTitle').textContent = 'Add Testimonial';
         document.getElementById('testimonialId').value = '';
         document.getElementById('testimonialForm').reset();
@@ -674,13 +703,11 @@ if (currentPage === 'testimonials.html') {
         try {
             const url = id ? `${API_URL}/testimonials/${id}` : `${API_URL}/testimonials`;
             const method = id ? 'PUT' : 'POST';
-            
             const response = await fetch(url, {
                 method: method,
                 headers: getHeaders(),
                 body: JSON.stringify(data)
             });
-            
             const result = await response.json();
             if (result.success) {
                 Swal.fire('Success!', id ? 'Testimonial updated!' : 'Testimonial added!', 'success');
@@ -706,7 +733,6 @@ async function editTestimonial(id) {
         Swal.fire('Error!', 'Invalid testimonial ID', 'error');
         return;
     }
-    
     isLoading = true;
     
     try {
@@ -731,12 +757,10 @@ async function editTestimonial(id) {
 
 async function deleteTestimonial(id) {
     if (isLoading) return;
-    
     if (!id || id === 'undefined' || id === 'null') {
         Swal.fire('Error!', 'Invalid testimonial ID', 'error');
         return;
     }
-    
     const result = await Swal.fire({
         title: 'Delete Testimonial?',
         text: 'This action cannot be undone!',
@@ -745,7 +769,6 @@ async function deleteTestimonial(id) {
         confirmButtonColor: '#c62828',
         confirmButtonText: 'Yes, delete'
     });
-    
     if (result.isConfirmed) {
         isLoading = true;
         try {
@@ -776,7 +799,6 @@ if (currentPage === 'stats.html' && !dataLoaded) {
 
 async function loadStats() {
     if (dataLoaded || isLoading) return;
-    
     console.log('🔄 Loading stats...');
     isLoading = true;
     
@@ -788,7 +810,6 @@ async function loadStats() {
             document.getElementById('editCities').value = data.data.total_cities || 0;
             document.getElementById('editDelivery').value = data.data.on_time_delivery || 0;
         }
-        
         dataLoaded = true;
         console.log('✅ Stats loaded successfully!');
     } catch (error) {
@@ -801,14 +822,12 @@ async function loadStats() {
 async function updateStat(field, inputId) {
     if (isLoading) return;
     isLoading = true;
-    
     const value = parseInt(document.getElementById(inputId).value);
     if (isNaN(value) || value < 0) {
         Swal.fire('Error!', 'Please enter a valid number', 'error');
         isLoading = false;
         return;
     }
-    
     try {
         const response = await fetch(`${API_URL}/stats`, {
             method: 'PUT',
