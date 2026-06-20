@@ -1,10 +1,9 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Fixed HTTPS, Edit Product, and Placeholder Images
+ * ✅ Fixed HTTPS, Image URLs, and Edit Product
  */
 
 // ======================= CONFIGURATION =======================
-// ✅ USE HTTPS!
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
 const API_URL = `${BACKEND_URL}/api`;
 
@@ -179,19 +178,33 @@ async function loadProducts() {
         const tbody = document.getElementById('productsTableBody');
         
         if (data.success && data.data.length > 0) {
-            tbody.innerHTML = data.data.map(p => `
-                <tr>
-                    <td><img src="${p.image_url ? BACKEND_URL + p.image_url : `https://picsum.photos/seed/${p.id || Math.random()}/50/50`}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${p.id || Math.random()}/50/50'"></td>
-                    <td><strong>${p.name}</strong></td>
-                    <td>${p.category}</td>
-                    <td>${p.price}</td>
-                    <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = data.data.map(p => {
+                // ✅ FIXED: Proper image URL handling
+                let imageUrl = 'https://picsum.photos/seed/' + (p.id || Math.random()) + '/50/50';
+                if (p.image_url) {
+                    // If image_url already starts with http, use it as is
+                    if (p.image_url.startsWith('http')) {
+                        imageUrl = p.image_url;
+                    } else {
+                        // Otherwise, prepend the backend URL
+                        imageUrl = BACKEND_URL + p.image_url;
+                    }
+                }
+                
+                return `
+                    <tr>
+                        <td><img src="${imageUrl}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${p.id || Math.random()}/50/50'"></td>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${p.category}</td>
+                        <td>${p.price}</td>
+                        <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } else {
             tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No products found</td></tr>`;
         }
@@ -278,9 +291,11 @@ if (currentPage === 'products.html') {
 // ✅ FIXED: Edit Product with proper ID handling
 async function editProduct(id) {
     if (isLoading) return;
-    if (!id) {
-        console.error('❌ No product ID provided');
-        Swal.fire('Error!', 'Invalid product ID', 'error');
+    
+    // ✅ Check if ID is valid
+    if (!id || id === 'undefined' || id === 'null') {
+        console.error('❌ Invalid product ID:', id);
+        Swal.fire('Error!', 'Invalid product ID. Please refresh and try again.', 'error');
         return;
     }
     
@@ -298,12 +313,24 @@ async function editProduct(id) {
             document.getElementById('productPrice').value = p.price.replace(/[₦,]/g, '');
             document.getElementById('productDescription').value = p.description || '';
             document.getElementById('productStatus').value = p.is_sold_out ? 'true' : 'false';
-            document.getElementById('currentImagePreview').innerHTML = p.image_url ? `<img src="${BACKEND_URL}${p.image_url}" style="max-width: 150px; border-radius: 8px;">` : '';
+            
+            // ✅ FIXED: Proper image URL for preview
+            let previewImage = '';
+            if (p.image_url) {
+                if (p.image_url.startsWith('http')) {
+                    previewImage = p.image_url;
+                } else {
+                    previewImage = BACKEND_URL + p.image_url;
+                }
+            }
+            document.getElementById('currentImagePreview').innerHTML = previewImage ? `<img src="${previewImage}" style="max-width: 150px; border-radius: 8px;">` : '';
             document.getElementById('productModal').style.display = 'flex';
+        } else {
+            Swal.fire('Error!', 'Product not found', 'error');
         }
     } catch (error) {
         console.error('Edit error:', error);
-        Swal.fire('Error!', 'Failed to load product details', 'error');
+        Swal.fire('Error!', 'Failed to load product details. Please refresh and try again.', 'error');
     } finally {
         isLoading = false;
     }
@@ -311,6 +338,11 @@ async function editProduct(id) {
 
 async function deleteProduct(id) {
     if (isLoading) return;
+    
+    if (!id || id === 'undefined' || id === 'null') {
+        Swal.fire('Error!', 'Invalid product ID', 'error');
+        return;
+    }
     
     const result = await Swal.fire({
         title: 'Delete Product?',
@@ -360,19 +392,25 @@ async function loadHeroImages() {
         const grid = document.getElementById('heroGrid');
         
         if (data.success && data.data.length > 0) {
-            grid.innerHTML = data.data.map(h => `
-                <div class="hero-card">
-                    <img src="${h.image_url.startsWith('http') ? h.image_url : BACKEND_URL + h.image_url}" alt="${h.title || 'Hero image'}" onerror="this.src='https://picsum.photos/250/200?random=${Math.random()}'">
-                    <div class="hero-card-info">
-                        <h4>${h.title || 'Untitled'}</h4>
-                        <p>${h.subtitle || ''}</p>
+            grid.innerHTML = data.data.map(h => {
+                let imageUrl = h.image_url;
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = BACKEND_URL + imageUrl;
+                }
+                return `
+                    <div class="hero-card">
+                        <img src="${imageUrl || 'https://picsum.photos/250/200?random=' + Math.random()}" alt="${h.title || 'Hero image'}" onerror="this.src='https://picsum.photos/250/200?random=${Math.random()}'">
+                        <div class="hero-card-info">
+                            <h4>${h.title || 'Untitled'}</h4>
+                            <p>${h.subtitle || ''}</p>
+                        </div>
+                        <div class="hero-card-actions">
+                            <button class="btn btn-sm btn-primary" onclick="editHero('${h.id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteHero('${h.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
-                    <div class="hero-card-actions">
-                        <button class="btn btn-sm btn-primary" onclick="editHero('${h.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteHero('${h.id}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         } else {
             grid.innerHTML = `<div style="text-align: center; padding: 60px; color: #94a3b8; width: 100%;">No hero images yet</div>`;
         }
@@ -388,7 +426,7 @@ async function loadHeroImages() {
 
 async function editHero(id) {
     if (isLoading) return;
-    if (!id) {
+    if (!id || id === 'undefined' || id === 'null') {
         Swal.fire('Error!', 'Invalid hero ID', 'error');
         return;
     }
@@ -403,7 +441,16 @@ async function editHero(id) {
             document.getElementById('heroId').value = h.id;
             document.getElementById('heroTitle').value = h.title || '';
             document.getElementById('heroSubtitle').value = h.subtitle || '';
-            document.getElementById('currentHeroPreview').innerHTML = `<img src="${BACKEND_URL}${h.image_url}" style="max-width: 150px; border-radius: 8px;">`;
+            
+            let previewImage = '';
+            if (h.image_url) {
+                if (h.image_url.startsWith('http')) {
+                    previewImage = h.image_url;
+                } else {
+                    previewImage = BACKEND_URL + h.image_url;
+                }
+            }
+            document.getElementById('currentHeroPreview').innerHTML = previewImage ? `<img src="${previewImage}" style="max-width: 150px; border-radius: 8px;">` : '';
             document.getElementById('heroModal').style.display = 'flex';
         }
     } catch (error) {
@@ -416,6 +463,11 @@ async function editHero(id) {
 
 async function deleteHero(id) {
     if (isLoading) return;
+    
+    if (!id || id === 'undefined' || id === 'null') {
+        Swal.fire('Error!', 'Invalid hero ID', 'error');
+        return;
+    }
     
     const result = await Swal.fire({
         title: 'Delete Hero Image?',
@@ -492,7 +544,7 @@ async function loadTestimonials() {
 
 async function editTestimonial(id) {
     if (isLoading) return;
-    if (!id) {
+    if (!id || id === 'undefined' || id === 'null') {
         Swal.fire('Error!', 'Invalid testimonial ID', 'error');
         return;
     }
@@ -521,6 +573,11 @@ async function editTestimonial(id) {
 
 async function deleteTestimonial(id) {
     if (isLoading) return;
+    
+    if (!id || id === 'undefined' || id === 'null') {
+        Swal.fire('Error!', 'Invalid testimonial ID', 'error');
+        return;
+    }
     
     const result = await Swal.fire({
         title: 'Delete Testimonial?',
