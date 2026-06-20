@@ -1,6 +1,6 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Fixed HTTPS, Image URLs, and Edit Product
+ * ✅ Fixed: Product ID handling (_id or id)
  */
 
 // ======================= CONFIGURATION =======================
@@ -139,14 +139,17 @@ async function loadDashboard() {
             if (recent.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">No products found</td></tr>`;
             } else {
-                tbody.innerHTML = recent.map(p => `
-                    <tr>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${p.category}</td>
-                        <td>${p.price}</td>
-                        <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = recent.map(p => {
+                    const pid = p._id || p.id;
+                    return `
+                        <tr>
+                            <td><strong>${p.name}</strong></td>
+                            <td>${p.category}</td>
+                            <td>${p.price}</td>
+                            <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
             }
         }
         
@@ -179,28 +182,29 @@ async function loadProducts() {
         
         if (data.success && data.data.length > 0) {
             tbody.innerHTML = data.data.map(p => {
+                // ✅ Get the correct ID field (could be _id or id)
+                const productId = p._id || p.id;
+                
                 // ✅ FIXED: Proper image URL handling
-                let imageUrl = 'https://picsum.photos/seed/' + (p.id || Math.random()) + '/50/50';
+                let imageUrl = 'https://picsum.photos/seed/' + (productId || Math.random()) + '/50/50';
                 if (p.image_url) {
-                    // If image_url already starts with http, use it as is
                     if (p.image_url.startsWith('http')) {
                         imageUrl = p.image_url;
                     } else {
-                        // Otherwise, prepend the backend URL
                         imageUrl = BACKEND_URL + p.image_url;
                     }
                 }
                 
                 return `
                     <tr>
-                        <td><img src="${imageUrl}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${p.id || Math.random()}/50/50'"></td>
+                        <td><img src="${imageUrl}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${productId || Math.random()}/50/50'"></td>
                         <td><strong>${p.name}</strong></td>
                         <td>${p.category}</td>
                         <td>${p.price}</td>
                         <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
                         <td>
-                            <button class="btn btn-sm btn-primary" onclick="editProduct('${p.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-primary" onclick="editProduct('${productId}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct('${productId}')"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -307,7 +311,7 @@ async function editProduct(id) {
         if (data.success) {
             const p = data.data;
             document.getElementById('productModalTitle').textContent = 'Edit Product';
-            document.getElementById('productId').value = p.id;
+            document.getElementById('productId').value = p._id || p.id;
             document.getElementById('productName').value = p.name;
             document.getElementById('productCategory').value = p.category;
             document.getElementById('productPrice').value = p.price.replace(/[₦,]/g, '');
@@ -393,6 +397,7 @@ async function loadHeroImages() {
         
         if (data.success && data.data.length > 0) {
             grid.innerHTML = data.data.map(h => {
+                const hid = h._id || h.id;
                 let imageUrl = h.image_url;
                 if (imageUrl && !imageUrl.startsWith('http')) {
                     imageUrl = BACKEND_URL + imageUrl;
@@ -405,8 +410,8 @@ async function loadHeroImages() {
                             <p>${h.subtitle || ''}</p>
                         </div>
                         <div class="hero-card-actions">
-                            <button class="btn btn-sm btn-primary" onclick="editHero('${h.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteHero('${h.id}')"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-primary" onclick="editHero('${hid}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteHero('${hid}')"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -438,7 +443,7 @@ async function editHero(id) {
         if (data.success) {
             const h = data.data;
             document.getElementById('heroModalTitle').textContent = 'Edit Hero Image';
-            document.getElementById('heroId').value = h.id;
+            document.getElementById('heroId').value = h._id || h.id;
             document.getElementById('heroTitle').value = h.title || '';
             document.getElementById('heroSubtitle').value = h.subtitle || '';
             
@@ -517,18 +522,21 @@ async function loadTestimonials() {
         const tbody = document.getElementById('testimonialsTableBody');
         
         if (data.success && data.data.length > 0) {
-            tbody.innerHTML = data.data.map(t => `
-                <tr>
-                    <td><strong>${t.customer_name}</strong></td>
-                    <td>${t.content.substring(0, 60)}${t.content.length > 60 ? '...' : ''}</td>
-                    <td>${'⭐'.repeat(t.rating)}</td>
-                    <td><span class="status-badge ${t.is_published ? 'status-published' : 'status-unpublished'}">${t.is_published ? 'Published' : 'Unpublished'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editTestimonial('${t.id}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteTestimonial('${t.id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = data.data.map(t => {
+                const tid = t._id || t.id;
+                return `
+                    <tr>
+                        <td><strong>${t.customer_name}</strong></td>
+                        <td>${t.content.substring(0, 60)}${t.content.length > 60 ? '...' : ''}</td>
+                        <td>${'⭐'.repeat(t.rating)}</td>
+                        <td><span class="status-badge ${t.is_published ? 'status-published' : 'status-unpublished'}">${t.is_published ? 'Published' : 'Unpublished'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editTestimonial('${tid}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTestimonial('${tid}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         } else {
             tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">No testimonials found</td></tr>`;
         }
@@ -556,7 +564,7 @@ async function editTestimonial(id) {
         if (data.success) {
             const t = data.data;
             document.getElementById('testimonialModalTitle').textContent = 'Edit Testimonial';
-            document.getElementById('testimonialId').value = t.id;
+            document.getElementById('testimonialId').value = t._id || t.id;
             document.getElementById('testimonialName').value = t.customer_name;
             document.getElementById('testimonialLocation').value = t.location || '';
             document.getElementById('testimonialContent').value = t.content;
