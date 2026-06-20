@@ -1,6 +1,6 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Fixed: Price is number, not string
+ * ✅ Fixed: All CRUD operations with proper error handling
  */
 
 // ======================= CONFIGURATION =======================
@@ -180,12 +180,9 @@ async function loadProducts() {
         const data = await fetchAPI('/products');
         const tbody = document.getElementById('productsTableBody');
         
-        if (data.success && data.data.length > 0) {
+        if (data.success && data.data && data.data.length > 0) {
             tbody.innerHTML = data.data.map(p => {
-                // ✅ Get the correct ID field (could be _id or id)
                 const productId = p._id || p.id;
-                
-                // ✅ FIXED: Proper image URL handling
                 let imageUrl = 'https://picsum.photos/seed/' + (productId || Math.random()) + '/50/50';
                 if (p.image_url) {
                     if (p.image_url.startsWith('http')) {
@@ -217,6 +214,10 @@ async function loadProducts() {
         console.log('✅ Products loaded successfully!');
     } catch (error) {
         console.error('❌ Products error:', error);
+        const tbody = document.getElementById('productsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">Error loading products. Please refresh.</td></tr>`;
+        }
     } finally {
         isLoading = false;
     }
@@ -292,11 +293,9 @@ if (currentPage === 'products.html') {
     });
 }
 
-// ✅ FIXED: Edit Product with proper price handling
 async function editProduct(id) {
     if (isLoading) return;
     
-    // ✅ Check if ID is valid
     if (!id || id === 'undefined' || id === 'null') {
         console.error('❌ Invalid product ID:', id);
         Swal.fire('Error!', 'Invalid product ID. Please refresh and try again.', 'error');
@@ -314,12 +313,10 @@ async function editProduct(id) {
             document.getElementById('productId').value = p._id || p.id;
             document.getElementById('productName').value = p.name;
             document.getElementById('productCategory').value = p.category;
-            // ✅ FIXED: Convert price to string before using replace
             document.getElementById('productPrice').value = String(p.price).replace(/[₦,]/g, '');
             document.getElementById('productDescription').value = p.description || '';
             document.getElementById('productStatus').value = p.is_sold_out ? 'true' : 'false';
             
-            // ✅ FIXED: Proper image URL for preview
             let previewImage = '';
             if (p.image_url) {
                 if (p.image_url.startsWith('http')) {
@@ -396,7 +393,7 @@ async function loadHeroImages() {
         const data = await fetchAPI('/hero');
         const grid = document.getElementById('heroGrid');
         
-        if (data.success && data.data.length > 0) {
+        if (data && data.success && data.data && data.data.length > 0) {
             grid.innerHTML = data.data.map(h => {
                 const hid = h._id || h.id;
                 let imageUrl = h.image_url;
@@ -418,16 +415,99 @@ async function loadHeroImages() {
                 `;
             }).join('');
         } else {
-            grid.innerHTML = `<div style="text-align: center; padding: 60px; color: #94a3b8; width: 100%;">No hero images yet</div>`;
+            grid.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: #94a3b8; width: 100%;">
+                    <i class="fas fa-images" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>
+                    <p>No hero images yet</p>
+                    <p style="font-size: 0.9rem;">Click "Add Hero Image" to upload your first hero image.</p>
+                </div>
+            `;
         }
         
         dataLoaded = true;
         console.log('✅ Hero images loaded successfully!');
     } catch (error) {
         console.error('❌ Hero images error:', error);
+        const grid = document.getElementById('heroGrid');
+        if (grid) {
+            grid.innerHTML = `
+                <div style="text-align: center; padding: 60px; color: #94a3b8; width: 100%;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; display: block; color: #f57c00;"></i>
+                    <p>Could not load hero images</p>
+                    <p style="font-size: 0.9rem;">Please make sure your backend is running.</p>
+                    <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px; background: #1e4a76; color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button>
+                </div>
+            `;
+        }
     } finally {
         isLoading = false;
     }
+}
+
+// ======================= HERO CRUD =======================
+if (currentPage === 'hero.html') {
+    document.getElementById('addHeroBtn')?.addEventListener('click', function() {
+        if (this.disabled) return;
+        this.disabled = true;
+        setTimeout(() => { this.disabled = false; }, 500);
+        
+        document.getElementById('heroModalTitle').textContent = 'Add Hero Image';
+        document.getElementById('heroId').value = '';
+        document.getElementById('heroForm').reset();
+        document.getElementById('currentHeroPreview').innerHTML = '';
+        document.getElementById('heroModal').style.display = 'flex';
+    });
+
+    document.getElementById('closeHeroModal')?.addEventListener('click', function() {
+        document.getElementById('heroModal').style.display = 'none';
+    });
+
+    document.getElementById('cancelHeroModal')?.addEventListener('click', function() {
+        document.getElementById('heroModal').style.display = 'none';
+    });
+
+    document.getElementById('heroForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (isLoading) return;
+        if (this.dataset.submitting === 'true') return;
+        this.dataset.submitting = 'true';
+        isLoading = true;
+        
+        const id = document.getElementById('heroId').value;
+        const formData = new FormData();
+        formData.append('title', document.getElementById('heroTitle').value);
+        formData.append('subtitle', document.getElementById('heroSubtitle').value);
+        
+        const imageFile = document.getElementById('heroImage').files[0];
+        if (imageFile) formData.append('image', imageFile);
+        
+        try {
+            const url = id ? `${API_URL}/hero/${id}` : `${API_URL}/hero`;
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('adminToken')}` },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire('Success!', id ? 'Hero image updated!' : 'Hero image added!', 'success');
+                document.getElementById('heroModal').style.display = 'none';
+                dataLoaded = false;
+                setTimeout(() => loadHeroImages(), 300);
+            } else {
+                Swal.fire('Error!', data.message || 'Something went wrong', 'error');
+            }
+        } catch (error) {
+            console.error('Hero save error:', error);
+            Swal.fire('Error!', 'Network error. Please try again.', 'error');
+        } finally {
+            isLoading = false;
+            this.dataset.submitting = 'false';
+        }
+    });
 }
 
 async function editHero(id) {
@@ -522,7 +602,7 @@ async function loadTestimonials() {
         const data = await fetchAPI('/testimonials');
         const tbody = document.getElementById('testimonialsTableBody');
         
-        if (data.success && data.data.length > 0) {
+        if (data.success && data.data && data.data.length > 0) {
             tbody.innerHTML = data.data.map(t => {
                 const tid = t._id || t.id;
                 return `
@@ -546,9 +626,78 @@ async function loadTestimonials() {
         console.log('✅ Testimonials loaded successfully!');
     } catch (error) {
         console.error('❌ Testimonials error:', error);
+        const tbody = document.getElementById('testimonialsTableBody');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">Error loading testimonials. Please refresh.</td></tr>`;
+        }
     } finally {
         isLoading = false;
     }
+}
+
+// ======================= TESTIMONIAL CRUD =======================
+if (currentPage === 'testimonials.html') {
+    document.getElementById('addTestimonialBtn')?.addEventListener('click', function() {
+        if (this.disabled) return;
+        this.disabled = true;
+        setTimeout(() => { this.disabled = false; }, 500);
+        
+        document.getElementById('testimonialModalTitle').textContent = 'Add Testimonial';
+        document.getElementById('testimonialId').value = '';
+        document.getElementById('testimonialForm').reset();
+        document.getElementById('testimonialModal').style.display = 'flex';
+    });
+
+    document.getElementById('closeTestimonialModal')?.addEventListener('click', function() {
+        document.getElementById('testimonialModal').style.display = 'none';
+    });
+
+    document.getElementById('cancelTestimonialModal')?.addEventListener('click', function() {
+        document.getElementById('testimonialModal').style.display = 'none';
+    });
+
+    document.getElementById('testimonialForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (isLoading) return;
+        if (this.dataset.submitting === 'true') return;
+        this.dataset.submitting = 'true';
+        isLoading = true;
+        
+        const id = document.getElementById('testimonialId').value;
+        const data = {
+            customer_name: document.getElementById('testimonialName').value,
+            location: document.getElementById('testimonialLocation').value,
+            content: document.getElementById('testimonialContent').value,
+            rating: parseInt(document.getElementById('testimonialRating').value)
+        };
+        
+        try {
+            const url = id ? `${API_URL}/testimonials/${id}` : `${API_URL}/testimonials`;
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: getHeaders(),
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                Swal.fire('Success!', id ? 'Testimonial updated!' : 'Testimonial added!', 'success');
+                document.getElementById('testimonialModal').style.display = 'none';
+                dataLoaded = false;
+                setTimeout(() => loadTestimonials(), 300);
+            } else {
+                Swal.fire('Error!', result.message || 'Something went wrong', 'error');
+            }
+        } catch (error) {
+            console.error('Testimonial save error:', error);
+            Swal.fire('Error!', 'Network error. Please try again.', 'error');
+        } finally {
+            isLoading = false;
+            this.dataset.submitting = 'false';
+        }
+    });
 }
 
 async function editTestimonial(id) {
