@@ -1,6 +1,6 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * ✅ Fixed: Product ID handling (_id or id)
+ * ✅ Fixed: Price is number, not string
  */
 
 // ======================= CONFIGURATION =======================
@@ -292,7 +292,7 @@ if (currentPage === 'products.html') {
     });
 }
 
-// ✅ FIXED: Edit Product with proper ID handling
+// ✅ FIXED: Edit Product with proper price handling
 async function editProduct(id) {
     if (isLoading) return;
     
@@ -314,7 +314,8 @@ async function editProduct(id) {
             document.getElementById('productId').value = p._id || p.id;
             document.getElementById('productName').value = p.name;
             document.getElementById('productCategory').value = p.category;
-            document.getElementById('productPrice').value = p.price.replace(/[₦,]/g, '');
+            // ✅ FIXED: Convert price to string before using replace
+            document.getElementById('productPrice').value = String(p.price).replace(/[₦,]/g, '');
             document.getElementById('productDescription').value = p.description || '';
             document.getElementById('productStatus').value = p.is_sold_out ? 'true' : 'false';
             
