@@ -1,7 +1,6 @@
 /* ===============================
    THE BIGGMART - MAIN STYLESHEET
-   Brand Colors: Blue (#1e4a76), White, Green (#2e7d32)
-   FIXED: Cards contained properly
+   FIXED: Uniform card height, embedded descriptions
    =============================== */
 
 /* CSS Variables & Reset */
@@ -52,7 +51,9 @@ body {
 }
 
 /* Typography */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-weight: 700;
   line-height: 1.2;
 }
@@ -182,6 +183,7 @@ h3 {
   cursor: pointer;
   font-family: inherit;
   justify-content: center;
+  width: 100%;
 }
 
 .btn-shop:hover {
@@ -226,7 +228,9 @@ h3 {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-spinner p {
@@ -239,7 +243,7 @@ h3 {
 /* ===== NAVBAR ===== */
 .site-header {
   background: var(--white);
-  box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -371,13 +375,13 @@ h3 {
   max-width: 500px;
   height: auto;
   border-radius: 30px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 0 0 8px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 0 8px rgba(255, 255, 255, 0.8);
   transition: var(--transition);
 }
 
 .hero-image:hover {
   transform: scale(1.02);
-  box-shadow: 0 25px 80px rgba(0,0,0,0.15);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
 
@@ -433,7 +437,7 @@ h3 {
   bottom: 25px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   color: white;
   padding: 12px 24px;
@@ -575,21 +579,24 @@ h3 {
   box-shadow: var(--shadow-md);
 }
 
-/* ===== PRODUCT CARDS - FIXED CONTAINMENT ===== */
+/* ============================================================
+   PRODUCT CARDS - COMPLETE FIX
+   ============================================================ */
 .product-card {
   flex: 0 0 280px;
   min-width: 280px;
   max-width: 280px;
   background: var(--white);
   border-radius: var(--radius-md);
-  padding: 1.2rem;
+  padding: 1.2rem 1.2rem 1.2rem;
   text-align: center;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
   border: 1px solid var(--gray-border);
   display: flex;
   flex-direction: column;
-  height: 370px;
+  height: 400px;
+  /* FIXED HEIGHT - all cards same size */
   overflow: hidden;
   position: relative;
 }
@@ -600,11 +607,12 @@ h3 {
   border-color: var(--green-light);
 }
 
+/* ===== IMAGE - UNIFORM SIZE ===== */
 .product-image {
   width: 100%;
-  height: 160px;
+  height: 180px;
   flex-shrink: 0;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.8rem;
   overflow: hidden;
   border-radius: var(--radius-sm);
   background: var(--gray-light);
@@ -618,6 +626,7 @@ h3 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* CROPS TO FILL - consistent size */
   transition: transform 0.5s ease;
 }
 
@@ -638,6 +647,7 @@ h3 {
   z-index: 2;
 }
 
+/* ===== TITLE - Fixed height ===== */
 .product-card h3 {
   font-size: 1rem;
   font-weight: 700;
@@ -648,31 +658,46 @@ h3 {
   text-overflow: ellipsis;
   flex-shrink: 0;
   min-height: 28px;
+  width: 100%;
 }
 
+/* ===== DESCRIPTION - FIXED: same width as card ===== */
 .product-description {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  line-height: 1.3;
+  line-height: 1.4;
   flex: 1;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  min-height: 36px;
-  max-height: 36px;
-  margin-bottom: 0.4rem;
+  min-height: 40px;
+  max-height: 40px;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  width: 100%;
+  /* ✅ SAME WIDTH AS CARD */
+  word-wrap: break-word;
+  text-align: center;
 }
 
+/* ===== PRICE ===== */
 .product-price {
   font-size: 1.2rem;
   font-weight: 800;
   color: var(--green);
   flex-shrink: 0;
-  min-height: 30px;
+  min-height: 32px;
   margin-bottom: 0.5rem;
+  transition: var(--transition);
 }
 
+.product-card:hover .product-price {
+  font-size: 1.4rem;
+  color: var(--green-dark);
+}
+
+/* ===== SHOP BUTTON - Fixed at bottom ===== */
 .product-card .btn-shop {
   width: 100%;
   padding: 10px 16px;
@@ -691,22 +716,28 @@ h3 {
     overflow-x: visible;
     padding: 0.5rem 0;
   }
-  
+
   .product-card {
     flex: none;
     min-width: unset;
     max-width: 100%;
     width: 100%;
-    height: 350px;
+    height: 370px;
     padding: 1rem;
   }
-  
+
   .product-image {
-    height: 140px;
+    height: 150px;
   }
-  
+
   .carousel-btn {
     display: none;
+  }
+
+  .product-description {
+    min-height: 36px;
+    max-height: 36px;
+    font-size: 0.75rem;
   }
 }
 
@@ -715,13 +746,13 @@ h3 {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-  
+
   .product-card {
-    height: 340px;
+    height: 380px;
   }
-  
+
   .product-image {
-    height: 160px;
+    height: 180px;
   }
 }
 
@@ -792,7 +823,8 @@ h3 {
   gap: 2rem;
 }
 
-.mission-box, .vision-box {
+.mission-box,
+.vision-box {
   background: var(--white);
   padding: 2rem 1.5rem;
   border-radius: var(--radius-md);
@@ -806,18 +838,25 @@ h3 {
   border-top-color: var(--green);
 }
 
-.mission-box:hover, .vision-box:hover {
+.mission-box:hover,
+.vision-box:hover {
   transform: scale(1.02);
   box-shadow: var(--shadow-md);
 }
 
-.mission-icon, .vision-icon {
+.mission-icon,
+.vision-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
 }
 
-.mission-icon { color: var(--blue); }
-.vision-icon { color: var(--green); }
+.mission-icon {
+  color: var(--blue);
+}
+
+.vision-icon {
+  color: var(--green);
+}
 
 /* ===== TESTIMONIALS ===== */
 .testimonials-grid {
@@ -976,8 +1015,13 @@ h3 {
   pointer-events: none;
 }
 
-.blue-icon { color: var(--blue); }
-.green-icon { color: var(--green); }
+.blue-icon {
+  color: var(--blue);
+}
+
+.green-icon {
+  color: var(--green);
+}
 
 .contact-actions {
   display: flex;
@@ -997,7 +1041,7 @@ h3 {
   .contact-actions {
     flex-direction: column;
   }
-  
+
   .contact-actions .btn {
     width: 100%;
   }
@@ -1066,7 +1110,8 @@ h3 {
   color: white;
 }
 
-.footer-links h4, .footer-social h4 {
+.footer-links h4,
+.footer-social h4 {
   color: white;
   margin-bottom: 1rem;
   font-size: 1.1rem;
@@ -1129,8 +1174,13 @@ h3 {
 }
 
 @keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .credit-link {
@@ -1150,7 +1200,7 @@ h3 {
   .mobile-menu-btn {
     display: none;
   }
-  
+
   .nav-menu {
     display: flex !important;
     width: auto;
@@ -1158,73 +1208,73 @@ h3 {
     padding: 0;
     gap: 2.5rem;
   }
-  
+
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
   }
-  
+
   .stat-number {
     font-size: 3.5rem;
   }
-  
+
   .cards-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .two-col-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 2.5rem;
   }
-  
+
   .testimonials-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .usp-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .hero-grid {
     grid-template-columns: 1fr 1fr;
     text-align: left;
   }
-  
+
   .hero-content h1 {
     font-size: 4rem;
   }
-  
+
   .hero-image {
     max-width: 450px;
   }
-  
+
   .contact-wrapper {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .contact-info {
     flex: 2;
   }
-  
+
   .contact-actions {
     flex: 1;
     justify-content: flex-end;
   }
-  
+
   .footer-content {
     grid-template-columns: repeat(3, 1fr);
     text-align: left;
   }
-  
+
   .footer-brand {
     align-items: flex-start;
   }
-  
+
   .social-icons {
     justify-content: flex-start;
   }
-  
+
   .section-padding {
     padding: 100px 0;
   }
@@ -1234,15 +1284,15 @@ h3 {
   .cards-grid {
     grid-template-columns: repeat(4, 1fr);
   }
-  
+
   .usp-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .hero-content h1 {
     font-size: 4.5rem;
   }
-  
+
   .section-padding {
     padding: 120px 0;
   }
@@ -1250,8 +1300,14 @@ h3 {
 
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .product-card {
