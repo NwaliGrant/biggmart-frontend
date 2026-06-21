@@ -4,6 +4,7 @@
  * ✅ Hero carousel working (swipe + auto-rotate)
  * ✅ WhatsApp integration for "Shop" button
  * ✅ Contact section with clickable details
+ * ✅ Card descriptions properly contained
  */
 
 // ======================= CONFIG =======================
@@ -327,6 +328,12 @@ function renderProducts(products) {
         );
         const waLink = `https://wa.me/09025188180?text=${waMessage}`;
         
+        // Truncate description if too long
+        let description = p.description || '';
+        if (description.length > 60) {
+            description = description.substring(0, 60) + '...';
+        }
+        
         return `
             <div class="product-card" data-category="${p.category}" data-price="${p.price}" data-name="${p.name}">
                 <div class="product-image">
@@ -334,7 +341,7 @@ function renderProducts(products) {
                     ${p.is_sold_out ? '<span class="sold-out-badge">Sold Out</span>' : ''}
                 </div>
                 <h3>${p.name}</h3>
-                <p>${p.description || ''}</p>
+                <div class="product-description">${description}</div>
                 <div class="product-price">${p.price}</div>
                 <a href="${p.is_sold_out ? '#' : waLink}" target="_blank" class="btn-shop ${p.is_sold_out ? 'btn-disabled' : ''}" data-name="${p.name}" data-price="${p.price}">
                     ${p.is_sold_out ? 'Sold Out' : '<i class="fas fa-shopping-bag"></i> Shop'}
