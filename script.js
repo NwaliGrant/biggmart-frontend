@@ -328,7 +328,7 @@ function renderProducts(products) {
         );
         const waLink = `https://wa.me/09025188180?text=${waMessage}`;
         
-        // Truncate description if too long
+        // Truncate description
         let description = p.description || '';
         if (description.length > 60) {
             description = description.substring(0, 60) + '...';
@@ -589,3 +589,5 @@ function initFeatures() {
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(loadRealData, 200);
 });
+
+console.log('✅ The BiggMart script loaded successfully!');
