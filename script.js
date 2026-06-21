@@ -1,6 +1,9 @@
 /**
- * THE BIGGMART - PRODUCTION VERSION WITH CAROUSEL
- * ✅ Clean console - no backend URLs exposed
+ * THE BIGGMART - PRODUCTION VERSION WITH CAROUSEL & WHATSAPP INTEGRATION
+ * ✅ Connected to deployed backend with HTTPS
+ * ✅ Hero carousel working (swipe + auto-rotate)
+ * ✅ WhatsApp integration for "Shop" button
+ * ✅ Contact section with clickable details
  */
 
 // ======================= CONFIG =======================
@@ -237,6 +240,8 @@ async function loadRealData() {
         setTimeout(() => {
             initializeHeroCarousel();
             initFeatures();
+            initializeContactButtons();
+            initializeHeroButtons();
         }, 100);
         
     } catch (error) {
@@ -252,6 +257,8 @@ async function loadRealData() {
         setTimeout(() => {
             initializeHeroCarousel();
             initFeatures();
+            initializeContactButtons();
+            initializeHeroButtons();
         }, 100);
     } finally {
         loading = false;
@@ -312,8 +319,14 @@ function renderHero(images) {
 
 function renderProducts(products) {
     if (!carouselTrack) return;
-    carouselTrack.innerHTML = products.map(p => {
-        const imageUrl = p.image_url ? buildImageUrl(p.image_url) : `https://picsum.photos/seed/${p.id || Math.random()}/200/200`;
+    
+    carouselTrack.innerHTML = products.map((p, index) => {
+        const imageUrl = p.image_url ? buildImageUrl(p.image_url) : `https://picsum.photos/seed/${p.id || index}/200/200`;
+        const waMessage = encodeURIComponent(
+            `Hello BiggMart, I saw "${p.name}" at the price of ${p.price}. I am interested, please send your account details.`
+        );
+        const waLink = `https://wa.me/09025188180?text=${waMessage}`;
+        
         return `
             <div class="product-card" data-category="${p.category}" data-price="${p.price}" data-name="${p.name}">
                 <div class="product-image">
@@ -323,10 +336,40 @@ function renderProducts(products) {
                 <h3>${p.name}</h3>
                 <p>${p.description || ''}</p>
                 <div class="product-price">${p.price}</div>
-                <button class="btn-view-product">View Details</button>
+                <a href="${p.is_sold_out ? '#' : waLink}" target="_blank" class="btn-shop ${p.is_sold_out ? 'btn-disabled' : ''}" data-name="${p.name}" data-price="${p.price}">
+                    ${p.is_sold_out ? 'Sold Out' : '<i class="fas fa-shopping-bag"></i> Shop'}
+                </a>
             </div>
         `;
     }).join('');
+
+    document.querySelectorAll('.btn-shop').forEach(btn => {
+        if (btn.classList.contains('btn-disabled')) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                Swal.fire({
+                    title: 'Sold Out',
+                    text: 'This product is currently sold out. Please check back later!',
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#2e7d32'
+                });
+            });
+        } else {
+            btn.addEventListener('click', function(e) {
+                const name = this.dataset.name;
+                const price = this.dataset.price;
+                const message = encodeURIComponent(
+                    `Hello BiggMart, I saw "${name}" at the price of ${price}. I am interested, please send your account details.`
+                );
+                const waLink = `https://wa.me/09025188180?text=${message}`;
+                window.open(waLink, '_blank');
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+    });
 }
 
 function renderTestimonials(testimonials) {
@@ -348,8 +391,96 @@ function updateStats(stats) {
     if (c('statDelivery')) c('statDelivery').innerHTML = `${stats.on_time_delivery || 0}%`;
 }
 
+// ======================= CONTACT BUTTONS =======================
+function initializeContactButtons() {
+    // Contact details click handlers
+    document.querySelectorAll('.contact-detail').forEach(detail => {
+        detail.addEventListener('click', function(e) {
+            const type = this.dataset.type;
+            const value = this.querySelector('.contact-value')?.textContent || '';
+            
+            if (type === 'whatsapp') {
+                const phone = value.replace(/\s/g, '');
+                window.open(`https://wa.me/${phone}`, '_blank');
+            } else if (type === 'phone') {
+                const numbers = value.split(',');
+                const phone = numbers[0].trim();
+                window.location.href = `tel:${phone}`;
+            } else if (type === 'email') {
+                window.location.href = `mailto:${value}`;
+            } else if (type === 'tiktok') {
+                const handle = value.replace('@', '');
+                window.open(`https://www.tiktok.com/@${handle}`, '_blank');
+            } else if (type === 'instagram') {
+                const handle = value.replace('@', '');
+                window.open(`https://www.instagram.com/${handle}`, '_blank');
+            } else if (type === 'address') {
+                window.open(`https://maps.google.com/?q=${encodeURIComponent(value)}`, '_blank');
+            }
+        });
+    });
+
+    // WhatsApp button - direct link
+    const whatsappBtns = document.querySelectorAll('.btn-wa');
+    whatsappBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const phone = '09025188180';
+            const message = 'Hello BiggMart, I am interested in your products. Please send me more information.';
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            e.preventDefault();
+        });
+    });
+
+    // Call button - direct call
+    const callBtns = document.querySelectorAll('.btn-call');
+    callBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const phone = '09036091718';
+            window.location.href = `tel:${phone}`;
+            e.preventDefault();
+        });
+    });
+}
+
+// ======================= HERO BUTTONS =======================
+function initializeHeroButtons() {
+    // Hero "Contact Us" button - smooth scroll to contact
+    const heroContactBtn = document.querySelector('.hero .btn-primary.cta-contact-btn');
+    if (heroContactBtn) {
+        heroContactBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const contactSection = document.getElementById('contact');
+            if (contactSection) {
+                const header = document.querySelector('.site-header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                const elementPosition = contactSection.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+            }
+        });
+    }
+    
+    // Hero "Shop Now" button - smooth scroll to products
+    const shopNowBtn = document.querySelector('.hero .btn-outline');
+    if (shopNowBtn) {
+        shopNowBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productsSection = document.getElementById('products');
+            if (productsSection) {
+                const header = document.querySelector('.site-header');
+                const headerHeight = header ? header.offsetHeight : 80;
+                const elementPosition = productsSection.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+                window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+            }
+        });
+    }
+}
+
 // ======================= FEATURES =======================
 function initFeatures() {
+    // Category filters
     filterBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             filterBtns.forEach(b => b.classList.remove('active'));
@@ -361,12 +492,14 @@ function initFeatures() {
         });
     });
 
+    // Carousel navigation
     if (prevBtn && nextBtn && carouselTrack) {
         const scroll = 300;
         prevBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: -scroll, behavior: 'smooth' }));
         nextBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: scroll, behavior: 'smooth' }));
     }
 
+    // Back to top
     if (backToTopBtn) {
         window.addEventListener('scroll', () => {
             backToTopBtn.classList.toggle('show', window.scrollY > 300);
@@ -374,6 +507,7 @@ function initFeatures() {
         backToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     }
 
+    // Mobile menu
     if (mobileMenuBtn && navMenu) {
         mobileMenuBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -400,6 +534,7 @@ function initFeatures() {
         });
     }
 
+    // Smooth scrolling
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
@@ -414,6 +549,7 @@ function initFeatures() {
         });
     });
 
+    // Active nav highlight
     const sections = document.querySelectorAll('section[id]');
     const navItems = document.querySelectorAll('.nav-link');
     function highlight() {
@@ -438,6 +574,7 @@ function initFeatures() {
     window.addEventListener('scroll', highlight);
     window.addEventListener('load', highlight);
 
+    // Current year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
 }
 
