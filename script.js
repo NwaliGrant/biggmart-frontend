@@ -1,7 +1,8 @@
 /**
- * THE BIGGMART - PRODUCTION VERSION WITH CAROUSEL & WHATSAPP INTEGRATION
+ * THE BIGGMART - COMPLETE PRODUCTION SCRIPT
  * ✅ Connected to deployed backend with HTTPS
- * ✅ Hero carousel working (swipe + auto-rotate)
+ * ✅ Hero carousel (swipe + auto-rotate)
+ * ✅ Product carousel on desktop (arrows + scroll)
  * ✅ WhatsApp integration for "Shop" button
  * ✅ Contact section with clickable details
  * ✅ Card descriptions properly contained
@@ -194,6 +195,90 @@ function initializeHeroCarousel() {
     });
 }
 
+// ======================= PRODUCT CAROUSEL NAVIGATION =======================
+function initProductCarousel() {
+    const track = document.getElementById('carouselTrack');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    if (!track) return;
+    
+    function isDesktop() {
+        return window.innerWidth > 992;
+    }
+    
+    function scrollCarousel(direction) {
+        if (!track || !isDesktop()) return;
+        const scrollAmount = 320;
+        const currentScroll = track.scrollLeft;
+        const targetScroll = direction === 'next' 
+            ? currentScroll + scrollAmount 
+            : currentScroll - scrollAmount;
+        
+        track.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+        });
+    }
+    
+    // Button click handlers
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            scrollCarousel('prev');
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            scrollCarousel('next');
+        });
+    }
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') {
+            scrollCarousel('prev');
+        } else if (e.key === 'ArrowRight') {
+            scrollCarousel('next');
+        }
+    });
+    
+    // Update button visibility on resize
+    function updateButtons() {
+        if (!prevBtn || !nextBtn) return;
+        if (isDesktop()) {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.display = 'flex';
+        } else {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+        }
+    }
+    
+    // Handle resize
+    window.addEventListener('resize', updateButtons);
+    updateButtons();
+    
+    // Handle track scroll (disable buttons at ends)
+    function updateButtonState() {
+        if (!track || !isDesktop()) return;
+        if (prevBtn) {
+            prevBtn.disabled = track.scrollLeft <= 0;
+        }
+        if (nextBtn) {
+            nextBtn.disabled = track.scrollLeft >= track.scrollWidth - track.clientWidth - 10;
+        }
+    }
+    
+    track.addEventListener('scroll', updateButtonState);
+    updateButtonState();
+    
+    // Also update on load
+    setTimeout(updateButtonState, 500);
+}
+
 // ======================= LOAD DATA =======================
 async function loadRealData() {
     if (loaded || loading) return;
@@ -240,6 +325,7 @@ async function loadRealData() {
         
         setTimeout(() => {
             initializeHeroCarousel();
+            initProductCarousel();
             initFeatures();
             initializeContactButtons();
             initializeHeroButtons();
@@ -257,6 +343,7 @@ async function loadRealData() {
         
         setTimeout(() => {
             initializeHeroCarousel();
+            initProductCarousel();
             initFeatures();
             initializeContactButtons();
             initializeHeroButtons();
@@ -328,7 +415,6 @@ function renderProducts(products) {
         );
         const waLink = `https://wa.me/09025188180?text=${waMessage}`;
         
-        // Truncate description
         let description = p.description || '';
         if (description.length > 60) {
             description = description.substring(0, 60) + '...';
@@ -400,7 +486,6 @@ function updateStats(stats) {
 
 // ======================= CONTACT BUTTONS =======================
 function initializeContactButtons() {
-    // Contact details click handlers
     document.querySelectorAll('.contact-detail').forEach(detail => {
         detail.addEventListener('click', function(e) {
             const type = this.dataset.type;
@@ -427,7 +512,6 @@ function initializeContactButtons() {
         });
     });
 
-    // WhatsApp button - direct link
     const whatsappBtns = document.querySelectorAll('.btn-wa');
     whatsappBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -439,7 +523,6 @@ function initializeContactButtons() {
         });
     });
 
-    // Call button - direct call
     const callBtns = document.querySelectorAll('.btn-call');
     callBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
@@ -452,7 +535,6 @@ function initializeContactButtons() {
 
 // ======================= HERO BUTTONS =======================
 function initializeHeroButtons() {
-    // Hero "Contact Us" button - smooth scroll to contact
     const heroContactBtn = document.querySelector('.hero .btn-primary.cta-contact-btn');
     if (heroContactBtn) {
         heroContactBtn.addEventListener('click', function(e) {
@@ -468,7 +550,6 @@ function initializeHeroButtons() {
         });
     }
     
-    // Hero "Shop Now" button - smooth scroll to products
     const shopNowBtn = document.querySelector('.hero .btn-outline');
     if (shopNowBtn) {
         shopNowBtn.addEventListener('click', function(e) {
@@ -498,13 +579,6 @@ function initFeatures() {
             });
         });
     });
-
-    // Carousel navigation
-    if (prevBtn && nextBtn && carouselTrack) {
-        const scroll = 300;
-        prevBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: -scroll, behavior: 'smooth' }));
-        nextBtn.addEventListener('click', () => carouselTrack.scrollBy({ left: scroll, behavior: 'smooth' }));
-    }
 
     // Back to top
     if (backToTopBtn) {
