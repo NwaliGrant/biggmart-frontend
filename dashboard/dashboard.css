@@ -1,6 +1,7 @@
-/* ============================================
-   THE BIGGMART - DASHBOARD STYLES
-   ============================================ */
+/* ============================================================
+   THE BIGGMART - ADMIN DASHBOARD STYLES
+   Complete styling with multiple images support
+   ============================================================ */
 
 :root {
   --primary: #1e4a76;
@@ -42,7 +43,7 @@ body {
   min-height: 100vh;
 }
 
-/* ========== LOGIN PAGE ========== */
+/* ===== LOGIN PAGE ===== */
 .login-container {
   display: flex;
   justify-content: center;
@@ -147,7 +148,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* ========== DASHBOARD LAYOUT ========== */
+/* ===== DASHBOARD LAYOUT ===== */
 .dashboard-wrapper {
   display: flex;
   width: 100%;
@@ -277,7 +278,7 @@ body {
   color: var(--primary);
 }
 
-/* ========== STATS CARDS ========== */
+/* ===== STATS CARDS ===== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -321,7 +322,7 @@ body {
   font-size: 0.85rem;
 }
 
-/* ========== TABLES ========== */
+/* ===== TABLES ===== */
 .table-wrapper {
   background: var(--white);
   border-radius: var(--radius);
@@ -365,6 +366,20 @@ body {
   border-radius: 8px;
 }
 
+/* ===== IMAGE COUNT BADGE ===== */
+.image-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #e3f2fd;
+  color: #1e4a76;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ===== STATUS BADGES ===== */
 .status-badge {
   padding: 4px 12px;
   border-radius: 20px;
@@ -393,7 +408,7 @@ body {
   color: var(--danger);
 }
 
-/* ========== BUTTONS ========== */
+/* ===== BUTTONS ===== */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -486,7 +501,7 @@ body {
   color: var(--gray-400);
 }
 
-/* ========== MODAL ========== */
+/* ===== MODAL ===== */
 .modal {
   position: fixed;
   top: 0;
@@ -557,6 +572,11 @@ body {
   margin-bottom: 4px;
 }
 
+.form-group label small {
+  font-weight: 400;
+  color: var(--gray-500);
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
@@ -580,6 +600,47 @@ body {
   resize: vertical;
 }
 
+/* ===== ADDITIONAL IMAGES PREVIEW ===== */
+#currentImagesPreview {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+#currentImagesPreview img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid var(--gray-200);
+  transition: transform 0.2s;
+}
+
+#currentImagesPreview img:hover {
+  transform: scale(1.05);
+}
+
+/* ===== MULTIPLE IMAGES UPLOAD ===== */
+#productImages {
+  padding: 8px 0;
+}
+
+#productImages::-webkit-file-upload-button {
+  background: var(--primary);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s;
+}
+
+#productImages::-webkit-file-upload-button:hover {
+  background: var(--secondary);
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -589,7 +650,7 @@ body {
   border-top: 1px solid var(--gray-200);
 }
 
-/* ========== HERO GRID ========== */
+/* ===== HERO GRID ===== */
 .hero-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -637,7 +698,7 @@ body {
   border-top: 1px solid var(--gray-100);
 }
 
-/* ========== STATS EDIT ========== */
+/* ===== STATS EDIT ===== */
 .stats-edit-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -678,7 +739,7 @@ body {
   border-color: var(--primary);
 }
 
-/* ========== RECENT SECTION ========== */
+/* ===== RECENT SECTION ===== */
 .recent-section {
   margin-top: 32px;
 }
@@ -705,7 +766,7 @@ body {
   text-decoration: underline;
 }
 
-/* ========== RESPONSIVE ========== */
+/* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -759,4 +820,29 @@ body {
   .stats-edit-grid {
     grid-template-columns: 1fr;
   }
+  
+  #currentImagesPreview img {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-400);
 }

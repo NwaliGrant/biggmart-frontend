@@ -4,42 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   
-  <!-- ====== FAVICON ====== -->
+  <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/logo.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/logo.png">
   <link rel="apple-touch-icon" href="./assets/logo.png">
   
-  <!-- ====== OPEN GRAPH META TAGS (For Social Sharing) ====== -->
+  <!-- Open Graph -->
   <meta property="og:title" content="The BiggMart - All You Want in One Bigg Place" />
-  <meta property="og:description" content="Shop the latest gadgets, electronics, home essentials, and more. Quality products at competitive prices with fast delivery." />
+  <meta property="og:description" content="Shop the latest gadgets, electronics, home essentials, and more." />
   <meta property="og:image" content="https://biggmart.vercel.app/assets/logo.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta property="og:url" content="https://biggmart.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="The BiggMart - All You Want in One Bigg Place" />
-  <meta name="twitter:description" content="Shop the latest gadgets, electronics, home essentials, and more. Quality products at competitive prices with fast delivery." />
-  <meta name="twitter:image" content="https://biggmart.vercel.app/assets/logo.png" />
   
-<!-- ====== SEO META TAGS ====== -->
-<title>The BiggMart - All You Want in One Bigg Place</title>
-<meta name="description" content="Shop gadgets, electronics, home essentials, fashion, and more at The BiggMart. Quality products, competitive prices, and fast delivery in Nigeria." />
-<meta name="keywords" content="BiggMart, online shopping Nigeria, gadgets, electronics, home essentials, fashion, e-commerce, buy online" />
-<meta name="robots" content="index, follow" />
-<link rel="canonical" href="https://biggmart.vercel.app/" />
+  <title>The BiggMart | All You Want in One Bigg Place</title>
   
-  <!-- Google Fonts & Font Awesome Icons -->
+  <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- SweetAlert2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- External Stylesheet -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ======================= LOADING SPINNER ======================= -->
+  <!-- Loading Spinner -->
   <div id="loadingSpinner" class="loading-spinner">
     <div class="spinner"></div>
     <p>Loading The BiggMart...</p>
@@ -47,13 +34,20 @@
 
   <div id="mainContent" style="display: none;">
   
-    <!-- ======================= HEADER / NAVIGATION ======================= -->
+    <!-- ===== HEADER / NAVIGATION ===== -->
     <header class="site-header">
       <nav class="navbar container">
         <div class="logo-area">
           <img src="./assets/logo.png" alt="The BiggMart Logo" class="logo-img">
           <span class="brand-name">The BiggMart</span>
         </div>
+        
+        <!-- ===== SEARCH BAR ===== -->
+        <div class="search-container">
+          <input type="text" id="searchInput" placeholder="Search products..." class="search-input">
+          <button id="searchBtn" class="search-btn"><i class="fas fa-search"></i></button>
+        </div>
+        
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
           <i class="fas fa-bars"></i>
         </button>
@@ -69,7 +63,7 @@
     </header>
 
     <main>
-      <!-- ======================= HERO SECTION ======================= -->
+      <!-- ===== HERO SECTION ===== -->
       <section id="hero" class="hero">
         <div class="container hero-grid">
           <div class="hero-content">
@@ -88,9 +82,9 @@
         </div>
       </section>
 
-      <!-- ======================= COUNTER STATS ======================= -->
+      <!-- ===== COUNTER STATS ===== -->
       <section class="counter-stats">
-        <div class="container stats-grid" id="statsGrid">
+        <div class="container stats-grid">
           <div class="stat-item">
             <div class="stat-number" id="statCustomers">0</div>
             <div class="stat-label">Happy Customers</div>
@@ -107,34 +101,36 @@
             <i class="fas fa-city stat-icon"></i>
           </div>
           <div class="stat-item">
-            <div class="stat-number" id="statDelivery">0<span id="statDeliverySuffix">%</span></div>
+            <div class="stat-number" id="statDelivery">0%</div>
             <div class="stat-label">On-Time Delivery</div>
             <i class="fas fa-truck stat-icon"></i>
           </div>
         </div>
       </section>
 
-      <!-- ======================= PRODUCTS SECTION ======================= -->
+      <!-- ===== PRODUCTS SECTION ===== -->
       <section id="products" class="products-section section-padding">
         <div class="container">
           <h2 class="section-title">Featured <span class="green-text">Products</span></h2>
           
+          <!-- Category Filters -->
           <div class="category-filters" id="categoryFilters">
             <button class="filter-btn active" data-category="all">All Products</button>
             <button class="filter-btn" data-category="gadgets">Gadgets</button>
             <button class="filter-btn" data-category="electronics">Electronics</button>
             <button class="filter-btn" data-category="home">Home Essentials</button>
+            <button class="filter-btn" data-category="used">♻️ Used Items</button>
           </div>
 
           <div class="carousel-container">
-            <button class="carousel-btn prev-btn" id="prevBtn" aria-label="Previous"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-btn prev-btn" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
             <div class="carousel-track" id="carouselTrack"></div>
-            <button class="carousel-btn next-btn" id="nextBtn" aria-label="Next"><i class="fas fa-chevron-right"></i></button>
+            <button class="carousel-btn next-btn" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
           </div>
         </div>
       </section>
 
-      <!-- ======================= ABOUT SECTION ======================= -->
+      <!-- ===== ABOUT ===== -->
       <section id="about" class="about section-padding">
         <div class="container">
           <h2 class="section-title">About <span class="green-text">The BiggMart</span></h2>
@@ -145,7 +141,7 @@
         </div>
       </section>
 
-      <!-- ======================= WHY SHOP WITH US ======================= -->
+      <!-- ===== WHY SHOP ===== -->
       <section id="why-shop" class="why-shop section-padding light-bg">
         <div class="container">
           <h2 class="section-title">Why Shop With <span class="green-text">The BiggMart?</span></h2>
@@ -174,7 +170,7 @@
         </div>
       </section>
 
-      <!-- ======================= MISSION & VISION ======================= -->
+      <!-- ===== MISSION & VISION ===== -->
       <section class="mission-vision section-padding">
         <div class="container two-col-grid">
           <div class="mission-box">
@@ -190,7 +186,7 @@
         </div>
       </section>
 
-      <!-- ======================= TESTIMONIALS ======================= -->
+      <!-- ===== TESTIMONIALS ===== -->
       <section id="testimonials" class="testimonials section-padding light-bg">
         <div class="container">
           <h2 class="section-title">What Our <span class="green-text">Customers Say</span></h2>
@@ -198,7 +194,7 @@
         </div>
       </section>
 
-      <!-- ======================= WHY CHOOSE US ======================= -->
+      <!-- ===== WHY CHOOSE US ===== -->
       <section id="choose-us" class="choose-us section-padding">
         <div class="container">
           <h2 class="section-title">Why <span class="green-text">Choose Us?</span></h2>
@@ -214,7 +210,7 @@
         </div>
       </section>
 
-      <!-- ======================= CLOSING STATEMENT ======================= -->
+      <!-- ===== CLOSING STATEMENT ===== -->
       <section class="closing-statement">
         <div class="container">
           <div class="quote-block">
@@ -225,37 +221,71 @@
         </div>
       </section>
 
-      <!-- ======================= CONTACT SECTION ======================= -->
+      <!-- ===== CONTACT SECTION ===== -->
       <section id="contact" class="contact-section section-padding">
         <div class="container">
           <h2 class="section-title">Get in <span class="green-text">Touch</span></h2>
+          
           <div class="contact-wrapper">
-            <div class="contact-info">
-              <div class="contact-detail" data-type="phone">
-                <i class="fas fa-phone-alt blue-icon"></i> 
-                <strong>Phone:</strong> <span class="contact-value">09036091718, 09029194447</span>
+            <!-- Contact Info -->
+            <div class="contact-info-grid">
+              
+              <!-- Row 1: Phone & WhatsApp -->
+              <div class="contact-row">
+                <div class="contact-detail" data-type="phone">
+                  <i class="fas fa-phone-alt blue-icon"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">Phone</span>
+                    <!-- <span class="contact-value">09036091718, 09029194447</span> -->
+                  </div>
+                </div>
+                <div class="contact-detail" data-type="whatsapp">
+                  <i class="fab fa-whatsapp green-icon"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">WhatsApp</span>
+                    <!-- <span class="contact-value">09025188180</span> -->
+                  </div>
+                </div>
               </div>
-              <div class="contact-detail" data-type="whatsapp">
-                <i class="fab fa-whatsapp green-icon"></i> 
-                <strong>WhatsApp:</strong> <span class="contact-value">09025188180</span>
+              
+              <!-- Row 2: Email & TikTok -->
+              <div class="contact-row">
+                <div class="contact-detail" data-type="email">
+                  <i class="fas fa-envelope blue-icon"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">Email</span>
+                    <!-- <span class="contact-value">biggmart.service@gmail.com</span> -->
+                  </div>
+                </div>
+                <div class="contact-detail" data-type="tiktok">
+                  <i class="fab fa-tiktok"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">TikTok</span>
+                    <!-- <span class="contact-value">@biggmart.ww</span> -->
+                  </div>
+                </div>
               </div>
-              <div class="contact-detail" data-type="email">
-                <i class="fas fa-envelope blue-icon"></i> 
-                <strong>Email:</strong> <span class="contact-value">biggmart.service@gmail.com</span>
-              </div>
-              <div class="contact-detail" data-type="tiktok">
-                <i class="fab fa-tiktok"></i> 
-                <strong>TikTok:</strong> <span class="contact-value">biggmart.ng</span>
-              </div>
-              <div class="contact-detail" data-type="instagram">
-                <i class="fab fa-instagram"></i> 
-                <strong>Instagram:</strong> <span class="contact-value">the_biggmart</span>
-              </div>
-              <div class="contact-detail" data-type="address">
-                <i class="fas fa-map-marker-alt blue-icon"></i> 
-                <strong>Address:</strong> <span class="contact-value">122 Aba Road, Garrison PH.</span>
+              
+              <!-- Row 3: Instagram & Address -->
+              <div class="contact-row">
+                <div class="contact-detail" data-type="instagram">
+                  <i class="fab fa-instagram"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">Instagram</span>
+                    <!-- <span class="contact-value">@the_biggmart</span> -->
+                  </div>
+                </div>
+                <div class="contact-detail" data-type="address">
+                  <i class="fas fa-map-marker-alt blue-icon"></i>
+                  <div class="contact-text">
+                    <span class="contact-label">Address</span>
+                    <span class="contact-value">122 Aba Road, Garrison PH</span>
+                  </div>
+                </div>
               </div>
             </div>
+            
+            <!-- Action Buttons -->
             <div class="contact-actions">
               <a href="https://wa.me/09025188180" target="_blank" class="btn btn-wa">
                 <i class="fab fa-whatsapp"></i> Chat on WhatsApp
@@ -269,7 +299,7 @@
       </section>
     </main>
 
-    <!-- ======================= FOOTER ======================= -->
+    <!-- ===== FOOTER ===== -->
     <footer class="site-footer">
       <div class="container footer-content">
         <div class="footer-brand">
@@ -289,9 +319,9 @@
         <div class="footer-social">
           <h4>Follow Us</h4>
           <div class="social-icons">
-            <a href="https://www.instagram.com/the_biggmart" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
-            <a href="https://www.tiktok.com/@biggmart.ng" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
-            <a href="https://wa.me/09025188180" target="_blank" rel="noopener noreferrer"><i class="fab fa-whatsapp"></i></a>
+            <a href="https://www.instagram.com/the_biggmart" target="_blank"><i class="fab fa-instagram"></i></a>
+            <a href="https://www.tiktok.com/@biggmart.ww" target="_blank"><i class="fab fa-tiktok"></i></a>
+            <a href="https://wa.me/09025188180" target="_blank"><i class="fab fa-whatsapp"></i></a>
           </div>
         </div>
       </div>
@@ -302,14 +332,13 @@
       </div>
     </footer>
 
-    <!-- ======================= BACK TO TOP BUTTON ======================= -->
+    <!-- Back to Top -->
     <button id="backToTopBtn" class="back-to-top" title="Go to top">
       <i class="fas fa-arrow-up"></i>
     </button>
 
   </div>
 
-  <!-- ======================= JAVASCRIPT ======================= -->
-  <script src="script.js?v=10"></script>
+  <script src="script.js?v=12"></script>
 </body>
 </html>
