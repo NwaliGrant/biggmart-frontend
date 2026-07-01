@@ -1,10 +1,10 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
  * SIMPLIFIED: Single image only, no carousel
- * ✅ FIXED: Better error handling for 500 errors
+ * ✅ FIXED: Better error handling for 400 errors
+ * ✅ FIXED: ID cleaning for all product operations
  * ✅ FIXED: Testimonial CRUD fully implemented
- * ✅ FIXED: Product edit/delete with proper error handling
- * ✅ FIXED: ID cleaning for :1 issue
+ * ✅ FIXED: Product form submit with better error logging
  */
 
 // ======================= CONFIGURATION =======================
@@ -30,8 +30,11 @@ console.log(`📄 Current page: ${currentPage}`);
 // ======================= HELPER: Clean Product ID =======================
 function cleanProductId(id) {
     if (!id) return null;
-    if (typeof id === 'string' && id.includes(':')) {
-        id = id.split(':')[0];
+    if (typeof id === 'string') {
+        // Remove any trailing characters after colon, dot, or comma
+        id = id.split(':')[0].split('.')[0].split(',')[0];
+        // Remove any non-hex characters (for ObjectId)
+        id = id.replace(/[^a-fA-F0-9]/g, '');
     }
     return id;
 }
@@ -336,7 +339,7 @@ if (currentPage === 'products.html') {
         document.getElementById('productModal').style.display = 'none';
     });
 
-    // ===== PRODUCT FORM SUBMIT - SIMPLIFIED =====
+    // ===== PRODUCT FORM SUBMIT - FIXED =====
     document.getElementById('productForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -355,7 +358,7 @@ if (currentPage === 'products.html') {
         formData.append('name', document.getElementById('productName').value);
         formData.append('category', document.getElementById('productCategory').value);
         formData.append('price', document.getElementById('productPrice').value);
-        formData.append('description', document.getElementById('productDescription').value);
+        formData.append('description', document.getElementById('productDescription').value || '');
         formData.append('is_sold_out', document.getElementById('productStatus').value);
         
         // SINGLE IMAGE ONLY
@@ -378,23 +381,35 @@ if (currentPage === 'products.html') {
                 throw new Error('No token found. Please login again.');
             }
             
+            console.log(`📤 Sending ${method} request to: ${url}`);
+            
             const response = await fetch(url, {
                 method: method,
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
             
-            const data = await response.json();
+            console.log(`📡 Response status: ${response.status}`);
+            
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = { success: false, message: 'Invalid response from server' };
+            }
+            
             if (data.success) {
                 Swal.fire('Success!', id ? 'Product updated successfully!' : 'Product added successfully!', 'success');
                 document.getElementById('productModal').style.display = 'none';
                 dataLoaded = false;
                 setTimeout(() => loadProducts(), 300);
             } else {
-                Swal.fire('Error!', data.message || 'Something went wrong', 'error');
+                const errorMsg = data.message || 'Something went wrong';
+                console.error('❌ Server error:', errorMsg);
+                Swal.fire('Error!', errorMsg, 'error');
             }
         } catch (error) {
-            console.error('Save error:', error.message);
+            console.error('❌ Save error:', error.message);
             Swal.fire('Error!', 'Network error. Please try again.', 'error');
         } finally {
             isLoading = false;
@@ -405,14 +420,14 @@ if (currentPage === 'products.html') {
     });
 }
 
-// ===== EDIT PRODUCT =====
+// ===== EDIT PRODUCT - FULLY FIXED =====
 async function editProduct(id) {
     if (isLoading) {
         console.log('⏳ Already loading, please wait...');
         return;
     }
     
-    // Clean the ID
+    // ✅ FIX: Clean the ID
     id = cleanProductId(id);
     
     if (!id || id === 'undefined' || id === 'null' || id === '') {
@@ -504,6 +519,10 @@ async function editProduct(id) {
             Swal.fire('Not Found!', 'Product no longer exists. It may have been deleted.', 'error');
             dataLoaded = false;
             setTimeout(() => loadProducts(), 500);
+        } else if (error.message.includes('400')) {
+            Swal.fire('Invalid Request!', 'There was a problem with the product ID. Please refresh and try again.', 'error');
+            dataLoaded = false;
+            setTimeout(() => loadProducts(), 500);
         } else if (error.message.includes('500')) {
             Swal.fire('Server Error!', 'The server is having issues. Please try again later.', 'error');
         } else {
@@ -518,7 +537,7 @@ async function editProduct(id) {
 async function deleteProduct(id) {
     if (isLoading) return;
     
-    // Clean the ID
+    // ✅ FIX: Clean the ID
     id = cleanProductId(id);
     
     if (!id || id === 'undefined' || id === 'null') {
