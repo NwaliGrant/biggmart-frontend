@@ -1,6 +1,7 @@
 /* ============================================================
    THE BIGGMART - COMPLETE STYLES
    FIXED: Contact layout, TikTok, Double column mobile, footer logo
+   FIXED: Testimonial name and location spacing
    BEAUTIFUL PRODUCT MODAL - NON-SCROLLABLE
    ============================================================ */
 
@@ -910,6 +911,9 @@ h3 {
 }
 .vision-box { border-top-color: var(--green); }
 
+/* ============================================================
+   TESTIMONIALS - FIXED SPACING
+   ============================================================ */
 .testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -924,9 +928,60 @@ h3 {
   border-radius: var(--radius);
   text-align: center;
   border: 1px solid var(--gray-border);
+  transition: var(--transition);
 }
-.stars { color: #f59e0b; margin-bottom: 0.6rem; font-size: 0.9rem; }
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
 
+.stars { 
+  color: #f59e0b; 
+  margin-bottom: 0.6rem; 
+  font-size: 0.9rem; 
+}
+
+.testimonial-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
+}
+
+/* ===== FIX: Testimonial Customer Info Spacing ===== */
+.testimonial-card .customer-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 8px;
+}
+
+.testimonial-card .customer-info strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+/* Add comma after name using CSS pseudo-element */
+.testimonial-card .customer-info strong::after {
+  content: ", ";
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Hide comma if no location is present */
+.testimonial-card .customer-info:not(:has(span)) strong::after {
+  content: "";
+}
+
+.testimonial-card .customer-info span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================ */
 .usp-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
