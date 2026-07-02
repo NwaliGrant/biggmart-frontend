@@ -1,6 +1,6 @@
 /**
  * THE BIGGMART - ADMIN DASHBOARD
- * SIMPLIFIED: Single image only, no carousel
+ * ✅ FIXED: Multiple images support for product carousel
  * ✅ FIXED: Better error handling for 400 errors
  * ✅ FIXED: ID cleaning for all product operations
  * ✅ FIXED: Testimonial CRUD fully implemented
@@ -280,12 +280,16 @@ async function loadProducts() {
                     imageUrl = buildImageUrl(p.image_url);
                 }
                 
+                // Count total images (main + additional)
+                const totalImages = 1 + (p.images ? p.images.length : 0);
+                
                 return `
                     <tr>
                         <td><img src="${imageUrl}" alt="${p.name}" class="product-img-thumb" onerror="this.src='https://picsum.photos/seed/${productId || Math.random()}/50/50'"></td>
                         <td><strong>${p.name}</strong></td>
                         <td>${p.category}</td>
                         <td>${p.price}</td>
+                        <td><span class="image-count-badge">📸 ${totalImages}</span></td>
                         <td><span class="status-badge ${p.is_sold_out ? 'status-sold-out' : 'status-in-stock'}">${p.is_sold_out ? 'Sold Out' : 'In Stock'}</span></td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="editProduct('${productId}')"><i class="fas fa-edit"></i></button>
@@ -295,7 +299,7 @@ async function loadProducts() {
                 `;
             }).join('');
         } else if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">No products found</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">No products found</td></tr>`;
         }
         
         dataLoaded = true;
@@ -303,7 +307,7 @@ async function loadProducts() {
         console.error('❌ Products error:', error.message);
         const tbody = document.getElementById('productsTableBody');
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #c62828;">
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #c62828;">
                 <i class="fas fa-exclamation-circle" style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
                 Failed to load products: ${error.message}
                 <br><button onclick="location.reload()" style="margin-top: 10px; padding: 8px 20px; background: #1e4a76; color: white; border: none; border-radius: 8px; cursor: pointer;">Retry</button>
@@ -327,6 +331,8 @@ if (currentPage === 'products.html') {
         
         const mainPreview = document.getElementById('currentImagePreview');
         if (mainPreview) mainPreview.innerHTML = '';
+        const extraPreview = document.getElementById('currentImagesPreview');
+        if (extraPreview) extraPreview.innerHTML = '';
         
         document.getElementById('productModal').style.display = 'flex';
     });
@@ -339,7 +345,30 @@ if (currentPage === 'products.html') {
         document.getElementById('productModal').style.display = 'none';
     });
 
-    // ===== PRODUCT FORM SUBMIT - FIXED =====
+    // Preview additional images
+    document.getElementById('productImages')?.addEventListener('change', function() {
+        const preview = document.getElementById('currentImagesPreview');
+        if (!preview) return;
+        preview.innerHTML = '';
+        const files = this.files;
+        if (files.length > 5) {
+            Swal.fire('Warning!', 'Maximum 5 additional images allowed.', 'warning');
+            this.value = '';
+            return;
+        }
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0;';
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(files[i]);
+        }
+    });
+
+    // ===== PRODUCT FORM SUBMIT - WITH MULTIPLE IMAGES =====
     document.getElementById('productForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -361,14 +390,33 @@ if (currentPage === 'products.html') {
         formData.append('description', document.getElementById('productDescription').value || '');
         formData.append('is_sold_out', document.getElementById('productStatus').value);
         
-        // SINGLE IMAGE ONLY
-        const imageFile = document.getElementById('productImage').files[0];
-        if (imageFile) {
+        // ===== MAIN IMAGE =====
+        const mainImage = document.getElementById('productImage').files[0];
+        if (mainImage) {
             try {
-                const compressed = await compressImage(imageFile, 800, 800, 0.7);
+                const compressed = await compressImage(mainImage, 800, 800, 0.7);
                 formData.append('image', compressed);
             } catch (error) {
-                formData.append('image', imageFile);
+                formData.append('image', mainImage);
+            }
+        } else if (!id) {
+            // Only require image for new products
+            Swal.fire('Error!', 'Please upload a main product image.', 'error');
+            isLoading = false;
+            this.dataset.submitting = 'false';
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            return;
+        }
+        
+        // ===== ADDITIONAL IMAGES FOR CAROUSEL =====
+        const extraImages = document.getElementById('productImages').files;
+        for (let i = 0; i < extraImages.length; i++) {
+            try {
+                const compressed = await compressImage(extraImages[i], 800, 800, 0.7);
+                formData.append('images', compressed);
+            } catch (error) {
+                formData.append('images', extraImages[i]);
             }
         }
         
@@ -420,14 +468,13 @@ if (currentPage === 'products.html') {
     });
 }
 
-// ===== EDIT PRODUCT - FULLY FIXED =====
+// ===== EDIT PRODUCT - WITH MULTIPLE IMAGES =====
 async function editProduct(id) {
     if (isLoading) {
         console.log('⏳ Already loading, please wait...');
         return;
     }
     
-    // ✅ FIX: Clean the ID
     id = cleanProductId(id);
     
     if (!id || id === 'undefined' || id === 'null' || id === '') {
@@ -491,7 +538,7 @@ async function editProduct(id) {
             document.getElementById('productDescription').value = p.description || '';
             document.getElementById('productStatus').value = p.is_sold_out ? 'true' : 'false';
             
-            // Main image preview
+            // ===== MAIN IMAGE PREVIEW =====
             const mainPreview = document.getElementById('currentImagePreview');
             if (mainPreview) {
                 let previewImage = '';
@@ -499,6 +546,24 @@ async function editProduct(id) {
                     previewImage = buildImageUrl(p.image_url);
                 }
                 mainPreview.innerHTML = previewImage ? `<img src="${previewImage}" style="max-width: 150px; border-radius: 8px; border: 2px solid #e2e8f0;">` : '<p style="color: #94a3b8; font-size: 0.85rem;">No image</p>';
+            }
+            
+            // ===== ADDITIONAL IMAGES PREVIEW =====
+            const extraPreview = document.getElementById('currentImagesPreview');
+            if (extraPreview) {
+                extraPreview.innerHTML = '';
+                const extraImages = p.images || [];
+                if (extraImages.length > 0) {
+                    extraImages.forEach(img => {
+                        const imgUrl = buildImageUrl(img);
+                        const imgEl = document.createElement('img');
+                        imgEl.src = imgUrl;
+                        imgEl.style.cssText = 'width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0;';
+                        extraPreview.appendChild(imgEl);
+                    });
+                } else {
+                    extraPreview.innerHTML = '<p style="color: #94a3b8; font-size: 0.85rem;">No additional images</p>';
+                }
             }
             
             document.getElementById('productModal').style.display = 'flex';
@@ -537,7 +602,6 @@ async function editProduct(id) {
 async function deleteProduct(id) {
     if (isLoading) return;
     
-    // ✅ FIX: Clean the ID
     id = cleanProductId(id);
     
     if (!id || id === 'undefined' || id === 'null') {

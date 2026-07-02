@@ -1,6 +1,7 @@
 /**
  * THE BIGGMART - COMPLETE WORKING SCRIPT
- * FIXED: Beautiful non-scrollable product modal (NO NAVIGATION ICONS)
+ * FIXED: Product modal ALWAYS shows next/prev arrows & dots (even with 1 image)
+ * ADDED: Product carousel with dots, touch support (NO AUTO-SLIDE)
  */
 
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
@@ -19,6 +20,11 @@ let currentHeroIndex = 0;
 let autoRotateInterval = null;
 let isHeroPaused = false;
 let allProducts = [];
+
+// ===== PRODUCT CAROUSEL VARIABLES =====
+let currentProductIndex = 0;
+let isProductPaused = false;
+let productsPerView = 4;
 
 const spinner = document.getElementById('loadingSpinner');
 const mainContent = document.getElementById('mainContent');
@@ -60,7 +66,6 @@ async function fetchData(endpoint) {
 // ===== FETCH PRODUCT BY ID =====
 async function fetchProductById(productId) {
     try {
-        // Show loading state
         showLoadingModal('Fetching product details...');
         
         const data = await fetchData(`/products/${productId}`);
@@ -132,7 +137,7 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// ===== SHOW PRODUCT DETAILS - NO NAVIGATION ICONS =====
+// ===== SHOW PRODUCT DETAILS - ALWAYS SHOW ARROWS & DOTS =====
 function showProductDetails(product) {
     if (!product) {
         showErrorModal('Product not found');
@@ -146,7 +151,6 @@ function showProductDetails(product) {
     const productCategory = product.category || 'gadgets';
     const productDescription = product.description || 'No description available';
     
-    // Get images - ONLY FIRST IMAGE
     let images = product.images || [];
     if (product.image_url && images.length === 0) {
         images = [product.image_url];
@@ -155,10 +159,14 @@ function showProductDetails(product) {
         images = ['https://picsum.photos/400/300?random=1'];
     }
     
-    // ONLY USE THE FIRST IMAGE
-    const imageUrl = images[0];
+    // Ensure all images have full URLs
+    images = images.map(img => {
+        if (img.startsWith('http://') || img.startsWith('https://')) {
+            return img;
+        }
+        return buildImageUrl(img);
+    });
 
-    // Category display
     const categoryDisplay = {
         'gadgets': '📱 Gadget',
         'electronics': '🔌 Electronics',
@@ -166,13 +174,24 @@ function showProductDetails(product) {
         'used': '♻️ Used Item'
     }[productCategory] || '🛍️ Product';
 
-    // WhatsApp message
     const waMessage = encodeURIComponent(
         `Hello BiggMart, I saw "${productName}" at the price of ${productPrice}. I am interested, please send your account details.`
     );
     const waLink = `https://wa.me/09025188180?text=${waMessage}`;
 
-    // Create modal - NO NAVIGATION ICONS
+    // Generate image slides HTML
+    let slidesHtml = images.map((img, idx) => `
+        <div class="modal-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
+            <img src="${img}" alt="${productName} - Image ${idx + 1}" onerror="this.src='https://picsum.photos/400/300?random=${idx}'">
+        </div>
+    `).join('');
+
+    // Generate dots HTML
+    let dotsHtml = images.map((_, idx) => `
+        <span class="modal-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></span>
+    `).join('');
+
+    // ALWAYS show arrows and dots, even with 1 image
     const overlay = document.createElement('div');
     overlay.id = 'customModalOverlay';
     overlay.className = 'modal-overlay';
@@ -180,16 +199,22 @@ function showProductDetails(product) {
         <div class="modal-box product-modal">
             <button class="modal-close-btn-top" onclick="closeModal()">✕</button>
             
-            <!-- Single Image (No Slider) -->
-            <div class="modal-slider-container">
-                <div class="modal-slider-track">
-                    <div class="modal-slide active">
-                        <img src="${imageUrl}" alt="${productName}" onerror="this.src='https://picsum.photos/400/300?random=1'">
-                    </div>
+            <div class="modal-slider-container" id="modalSliderContainer">
+                <button class="modal-slider-nav prev" id="modalPrevBtn" aria-label="Previous image">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="modal-slider-nav next" id="modalNextBtn" aria-label="Next image">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="modal-slider-track" id="modalSliderTrack">
+                    ${slidesHtml}
                 </div>
             </div>
             
-            <!-- Product Info -->
+            <div class="modal-dots-container" id="modalDotsContainer">
+                ${dotsHtml}
+            </div>
+            
             <div class="modal-product-info">
                 <h2 class="modal-product-name">${productName}</h2>
                 <span class="modal-product-category">${categoryDisplay}</span>
@@ -212,6 +237,273 @@ function showProductDetails(product) {
     document.body.appendChild(overlay);
     currentModal = overlay;
     document.body.style.overflow = 'hidden';
+    
+    // Initialize modal slider after DOM is ready
+    setTimeout(() => {
+        initModalSlider(images.length);
+    }, 50);
+}
+
+// ===== MODAL SLIDER CONTROLS =====
+let modalCurrentIndex = 0;
+let modalImagesCount = 0;
+
+function initModalSlider(imageCount) {
+    modalImagesCount = imageCount;
+    modalCurrentIndex = 0;
+    
+    const track = document.getElementById('modalSliderTrack');
+    const prevBtn = document.getElementById('modalPrevBtn');
+    const nextBtn = document.getElementById('modalNextBtn');
+    const dots = document.querySelectorAll('.modal-dot');
+    const container = document.getElementById('modalSliderContainer');
+    const overlay = document.getElementById('customModalOverlay');
+    
+    if (!track) return;
+    
+    // Update slides and dots
+    function updateModalSlider(index) {
+        const slides = track.querySelectorAll('.modal-slide');
+        if (!slides.length) return;
+        
+        slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === index);
+        });
+        
+        dots.forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+        
+        modalCurrentIndex = index;
+    }
+    
+    // Go to specific slide
+    function goToModalSlide(index) {
+        if (modalImagesCount <= 1) {
+            // With only 1 image, just stay on it
+            updateModalSlider(0);
+            return;
+        }
+        if (index < 0) index = modalImagesCount - 1;
+        if (index >= modalImagesCount) index = 0;
+        updateModalSlider(index);
+    }
+    
+    // Next slide
+    function nextModalSlide() {
+        if (modalImagesCount <= 1) {
+            // Show a subtle indicator that there's only one image
+            const btn = document.getElementById('modalNextBtn');
+            if (btn) {
+                btn.style.transform = 'scale(0.8)';
+                setTimeout(() => { btn.style.transform = ''; }, 200);
+            }
+            return;
+        }
+        goToModalSlide(modalCurrentIndex + 1);
+    }
+    
+    // Previous slide
+    function prevModalSlide() {
+        if (modalImagesCount <= 1) {
+            const btn = document.getElementById('modalPrevBtn');
+            if (btn) {
+                btn.style.transform = 'scale(0.8)';
+                setTimeout(() => { btn.style.transform = ''; }, 200);
+            }
+            return;
+        }
+        goToModalSlide(modalCurrentIndex - 1);
+    }
+    
+    // Event listeners for buttons
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            prevModalSlide();
+        });
+    }
+    
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            nextModalSlide();
+        });
+    }
+    
+    // If only 1 image, add a visual indicator
+    if (modalImagesCount <= 1) {
+        if (prevBtn) {
+            prevBtn.style.opacity = '0.4';
+            prevBtn.style.cursor = 'default';
+        }
+        if (nextBtn) {
+            nextBtn.style.opacity = '0.4';
+            nextBtn.style.cursor = 'default';
+        }
+        // Add a small badge showing "1/1"
+        const container = document.getElementById('modalSliderContainer');
+        if (container) {
+            const badge = document.createElement('div');
+            badge.style.cssText = `
+                position: absolute;
+                bottom: 12px;
+                right: 12px;
+                background: rgba(0,0,0,0.6);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                z-index: 5;
+                backdrop-filter: blur(4px);
+            `;
+            badge.textContent = '1 / 1';
+            container.appendChild(badge);
+        }
+    } else {
+        // Add image counter for multiple images
+        const container = document.getElementById('modalSliderContainer');
+        if (container) {
+            const counter = document.createElement('div');
+            counter.style.cssText = `
+                position: absolute;
+                bottom: 12px;
+                right: 12px;
+                background: rgba(0,0,0,0.6);
+                color: white;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.7rem;
+                font-weight: 600;
+                z-index: 5;
+                backdrop-filter: blur(4px);
+            `;
+            counter.id = 'modalImageCounter';
+            counter.textContent = `1 / ${modalImagesCount}`;
+            container.appendChild(counter);
+            
+            // Update counter when slide changes
+            const originalUpdate = updateModalSlider;
+            updateModalSlider = function(index) {
+                originalUpdate(index);
+                const counterEl = document.getElementById('modalImageCounter');
+                if (counterEl) {
+                    counterEl.textContent = `${index + 1} / ${modalImagesCount}`;
+                }
+            };
+            // Re-bind the update function
+            window._updateModalSlider = updateModalSlider;
+        }
+    }
+    
+    // Event listeners for dots
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (modalImagesCount > 1) {
+                goToModalSlide(i);
+            }
+        });
+    });
+    
+    // Keyboard navigation
+    const keyHandler = function(e) {
+        if (!document.getElementById('customModalOverlay')) {
+            document.removeEventListener('keydown', keyHandler);
+            return;
+        }
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            prevModalSlide();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            nextModalSlide();
+        }
+    };
+    document.addEventListener('keydown', keyHandler);
+    
+    // Clean up on close
+    const cleanupKeyHandler = function() {
+        document.removeEventListener('keydown', keyHandler);
+    };
+    
+    const closeBtn = document.querySelector('.modal-close-btn-top');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', cleanupKeyHandler);
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                cleanupKeyHandler();
+            }
+        });
+    }
+    
+    // Touch swipe support
+    if (container) {
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isSwiping = false;
+        
+        container.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            isSwiping = true;
+        }, { passive: true });
+        
+        container.addEventListener('touchmove', function(e) {
+            if (!isSwiping) return;
+            e.preventDefault();
+        }, { passive: false });
+        
+        container.addEventListener('touchend', function(e) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 30) {
+                if (diff > 0) {
+                    nextModalSlide();
+                } else {
+                    prevModalSlide();
+                }
+            }
+        }, { passive: true });
+        
+        // Mouse drag support for desktop
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        
+        container.addEventListener('mousedown', function(e) {
+            if (e.target.closest('.modal-slider-nav') || e.target.closest('.modal-close-btn-top')) return;
+            isDragging = true;
+            startX = e.screenX;
+            container.style.cursor = 'grabbing';
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            currentX = e.screenX;
+        });
+        
+        document.addEventListener('mouseup', function(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            container.style.cursor = '';
+            const diff = startX - currentX;
+            if (Math.abs(diff) > 30) {
+                if (diff > 0) {
+                    nextModalSlide();
+                } else {
+                    prevModalSlide();
+                }
+            }
+            startX = 0;
+            currentX = 0;
+        });
+    }
 }
 
 // ===== HERO CAROUSEL =====
@@ -307,37 +599,181 @@ function initializeHeroCarousel() {
     });
 }
 
-// ===== PRODUCT CAROUSEL =====
+// ============================================================
+// ===== PRODUCT CAROUSEL - NO AUTO-SLIDE =====
+// ============================================================
+
+function getProductsPerView() {
+    if (window.innerWidth < 480) return 1;
+    if (window.innerWidth < 768) return 2;
+    if (window.innerWidth < 992) return 2;
+    return 4;
+}
+
+function goToProductSlide(index) {
+    const track = document.getElementById('carouselTrack');
+    if (!track) return;
+    
+    const cards = track.querySelectorAll('.product-card');
+    if (!cards.length) return;
+    
+    const totalProducts = cards.length;
+    const perView = getProductsPerView();
+    const maxIndex = Math.max(0, totalProducts - perView);
+    
+    if (index < 0) index = 0;
+    if (index > maxIndex) index = maxIndex;
+    
+    currentProductIndex = index;
+    
+    const cardWidth = cards[0]?.offsetWidth || 260;
+    const gap = 24;
+    const scrollAmount = index * (cardWidth + gap);
+    
+    track.scrollTo({
+        left: scrollAmount,
+        behavior: 'smooth'
+    });
+    
+    updateProductDots();
+}
+
+function nextProductSlide() {
+    const totalProducts = document.querySelectorAll('.product-card').length;
+    const perView = getProductsPerView();
+    const maxIndex = Math.max(0, totalProducts - perView);
+    
+    if (currentProductIndex < maxIndex) {
+        goToProductSlide(currentProductIndex + 1);
+    } else {
+        goToProductSlide(0);
+    }
+}
+
+function prevProductSlide() {
+    const totalProducts = document.querySelectorAll('.product-card').length;
+    const perView = getProductsPerView();
+    const maxIndex = Math.max(0, totalProducts - perView);
+    
+    if (currentProductIndex > 0) {
+        goToProductSlide(currentProductIndex - 1);
+    } else {
+        goToProductSlide(maxIndex);
+    }
+}
+
+function updateProductDots() {
+    const dotsContainer = document.getElementById('productDots');
+    if (!dotsContainer) return;
+    
+    const totalProducts = document.querySelectorAll('.product-card').length;
+    const perView = getProductsPerView();
+    const dotCount = Math.max(1, Math.ceil(totalProducts / perView));
+    
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < dotCount; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'product-dot' + (i === currentProductIndex ? ' active' : '');
+        dot.dataset.index = i;
+        dot.addEventListener('click', function() {
+            goToProductSlide(i);
+        });
+        dotsContainer.appendChild(dot);
+    }
+}
+
 function initProductCarousel() {
     const track = document.getElementById('carouselTrack');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
+    
     if (!track) return;
-    function isDesktop() { return window.innerWidth > 992; }
-    function scrollCarousel(direction) {
-        if (!track || !isDesktop()) return;
-        const scrollAmount = 320;
-        const currentScroll = track.scrollLeft;
-        const targetScroll = direction === 'next' ? currentScroll + scrollAmount : currentScroll - scrollAmount;
-        track.scrollTo({ left: targetScroll, behavior: 'smooth' });
+    
+    // Create dots container
+    let dotsContainer = document.getElementById('productDots');
+    if (!dotsContainer) {
+        dotsContainer = document.createElement('div');
+        dotsContainer.id = 'productDots';
+        dotsContainer.className = 'product-dots';
+        const container = track.closest('.carousel-container');
+        if (container) {
+            container.appendChild(dotsContainer);
+        }
     }
-    if (prevBtn) prevBtn.addEventListener('click', function(e) { e.preventDefault(); scrollCarousel('prev'); });
-    if (nextBtn) nextBtn.addEventListener('click', function(e) { e.preventDefault(); scrollCarousel('next'); });
-    function updateButtons() {
-        if (!prevBtn || !nextBtn) return;
-        if (isDesktop()) { prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex'; }
-        else { prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; }
+    
+    // Add event listeners for prev/next buttons
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            prevProductSlide();
+        });
     }
-    window.addEventListener('resize', updateButtons);
-    updateButtons();
-    function updateButtonState() {
-        if (!track || !isDesktop()) return;
-        if (prevBtn) prevBtn.disabled = track.scrollLeft <= 0;
-        if (nextBtn) nextBtn.disabled = track.scrollLeft >= track.scrollWidth - track.clientWidth - 10;
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            nextProductSlide();
+        });
     }
-    track.addEventListener('scroll', updateButtonState);
-    updateButtonState();
-    setTimeout(updateButtonState, 500);
+    
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            updateProductDots();
+            const perView = getProductsPerView();
+            const totalProducts = document.querySelectorAll('.product-card').length;
+            const maxIndex = Math.max(0, totalProducts - perView);
+            if (currentProductIndex > maxIndex) {
+                goToProductSlide(maxIndex);
+            }
+            updateButtonsVisibility();
+        }, 300);
+    });
+    
+    // Touch support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    track.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    track.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 50) {
+            if (diff > 0) {
+                nextProductSlide();
+            } else {
+                prevProductSlide();
+            }
+        }
+    }, { passive: true });
+    
+    // Update dots on scroll
+    track.addEventListener('scroll', function() {
+        const cards = track.querySelectorAll('.product-card');
+        if (!cards.length) return;
+        const cardWidth = cards[0]?.offsetWidth || 260;
+        const gap = 24;
+        const scrollPos = track.scrollLeft;
+        const index = Math.round(scrollPos / (cardWidth + gap));
+        if (index !== currentProductIndex) {
+            currentProductIndex = index;
+            updateProductDots();
+        }
+    });
+    
+    function updateButtonsVisibility() {
+        const isDesktop = window.innerWidth > 992;
+        if (prevBtn) prevBtn.style.display = isDesktop ? 'flex' : 'none';
+        if (nextBtn) nextBtn.style.display = isDesktop ? 'flex' : 'none';
+    }
+    
+    // Initialize
+    setTimeout(() => {
+        updateProductDots();
+        updateButtonsVisibility();
+    }, 300);
 }
 
 // ===== SEARCH FUNCTION =====
@@ -421,7 +857,6 @@ function renderProducts(products) {
         if (p.image_url) {
             imageUrl = buildImageUrl(p.image_url);
         }
-        const images = p.images || [p.image_url || imageUrl];
         let description = p.description || '';
         if (description.length > 70) description = description.substring(0, 70) + '...';
         const category = p.category || 'gadgets';
@@ -450,6 +885,11 @@ function renderProducts(products) {
             </div>
         `;
     }).join('');
+    
+    // Re-initialize carousel after rendering
+    setTimeout(() => {
+        initProductCarousel();
+    }, 100);
 }
 
 // ===== LOAD DATA =====
@@ -678,7 +1118,7 @@ function renderTestimonials(testimonials) {
         <div class="testimonial-card">
             <div class="stars">${Array(5).fill().map((_, i) => `<i class="fas fa-star${i < t.rating ? '' : '-o'}"></i>`).join('')}</div>
             <p>"${t.content}"</p>
-            <div class="customer-info"><strong>${t.customer_name}</strong>${t.location ? `<span>${t.location}</span>` : ''}</div>
+            <div class="customer-info"><strong>${t.customer_name}</strong>${t.location ? `<span>, ${t.location}</span>` : ''}</div>
         </div>
     `).join('');
 }
@@ -865,4 +1305,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 console.log('✅ The BiggMart script loaded successfully!');
-console.log('📱 All features: Search, Product Modal (single image), Used Items, Double Column Mobile');
+console.log('📱 All features: Search, Product Carousel, Product Modal with ALWAYS VISIBLE arrows & dots, Swipe support');
