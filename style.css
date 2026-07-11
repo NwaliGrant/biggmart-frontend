@@ -1,7 +1,7 @@
 /* ============================================================
-   THE BIGGMART - COMPLETE STYLES
-   FIXED: Desktop navbar - flex layout (logo | search | nav)
-   FIXED: Mobile navbar - logo | search | hamburger
+   THE BIGGMART - COMPLETE STYLE
+   
+
    ============================================================ */
 
 :root {
@@ -125,7 +125,7 @@ h3 {
 .btn-shop.btn-disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.7; }
 .btn-shop.btn-disabled:hover { transform: none; }
 
-/* ===== SEARCH BAR ===== */
+/* ===== SEARCH BAR - FIXED LARGER ===== */
 .search-container {
   display: flex;
   align-items: center;
@@ -136,7 +136,8 @@ h3 {
   overflow: hidden;
   transition: var(--transition);
   flex: 1;
-  max-width: 400px;
+  max-width: 450px;
+  min-height: 48px;
 }
 .search-container:focus-within {
   border-color: var(--blue);
@@ -144,23 +145,28 @@ h3 {
 }
 .search-input {
   flex: 1;
-  padding: 8px 16px;
+  padding: 12px 18px;
   border: none;
   background: transparent;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-family: inherit;
   outline: none;
-  min-width: 120px;
+  min-width: 140px;
+  height: 48px;
 }
-.search-input::placeholder { color: var(--text-muted); }
+.search-input::placeholder { color: var(--text-muted); font-size: 0.95rem; }
 .search-btn {
   background: var(--blue);
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 12px 20px;
   cursor: pointer;
   transition: var(--transition);
-  font-size: 0.9rem;
+  font-size: 1rem;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .search-btn:hover { background: var(--green); }
 
@@ -220,8 +226,8 @@ h3 {
 /* Search - center (flexible) */
 .search-container {
   flex: 1 1 auto;
-  max-width: 400px;
-  min-width: 180px;
+  max-width: 450px;
+  min-width: 200px;
 }
 
 /* Nav Menu - right */
@@ -260,7 +266,7 @@ h3 {
   flex-shrink: 0;
 }
 
-/* ===== HERO ===== */
+/* ===== HERO - REMOVED CAPTION ===== */
 .hero {
   padding: 70px 0;
   background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #e8f5e9 100%);
@@ -306,22 +312,6 @@ h3 {
   transition: var(--transition);
 }
 .hero-dots .dot.active { background: var(--green); transform: scale(1.2); }
-.hero-caption {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(8px);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
-  text-align: center;
-  width: 80%;
-  max-width: 320px;
-}
-.hero-caption h3 { color: white; font-size: 1rem; margin-bottom: 2px; }
-.hero-caption p { font-size: 0.8rem; opacity: 0.8; }
 
 /* ===== COUNTER STATS ===== */
 .counter-stats {
@@ -346,6 +336,70 @@ h3 {
 }
 .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; opacity: 0.85; }
 .stat-icon { display: none; }
+
+/* ============================================================
+   SERVICES SECTION - NEW
+   ============================================================ */
+.services-section {
+  background: var(--off-white);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.service-card {
+  background: var(--white);
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius);
+  text-align: center;
+  border: 1px solid var(--gray-border);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.service-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--green-light);
+}
+
+.service-icon {
+  font-size: 2.5rem;
+  color: var(--green);
+  margin-bottom: 1rem;
+  background: rgba(46, 125, 50, 0.08);
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  transition: var(--transition);
+}
+
+.service-card:hover .service-icon {
+  background: var(--green);
+  color: white;
+  transform: scale(1.05);
+}
+
+.service-card h3 {
+  color: var(--blue);
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.service-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
 
 /* ============================================================
    PRODUCTS - WITH CAROUSEL DOTS
@@ -713,7 +767,7 @@ h3 {
     transform: scale(1.2);
 }
 
-/* Product Info */
+/* Product Info - REMOVED FEATURES SECTION */
 .modal-product-info {
     padding: 16px 24px 24px;
     background: white;
@@ -750,22 +804,7 @@ h3 {
     font-size: 0.9rem;
     color: #475569;
     line-height: 1.6;
-    margin-bottom: 12px;
-}
-
-.modal-product-features {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
     margin-bottom: 16px;
-}
-
-.modal-product-features span {
-    font-size: 0.8rem;
-    color: #475569;
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
 .modal-buy-btn {
@@ -1061,7 +1100,7 @@ h3 {
 }
 
 .testimonial-card .customer-info strong::after {
-  content: ", ";
+  
   color: var(--text-muted);
   font-weight: 400;
 }
@@ -1247,6 +1286,10 @@ h3 {
   .hero-grid { gap: 2rem; }
   .hero-content h1 { font-size: 2.5rem; }
   
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .modal-slider-container {
     height: 260px;
   }
@@ -1289,15 +1332,18 @@ h3 {
     max-width: none;
     min-width: 0;
     margin: 0 4px;
+    min-height: 40px;
   }
   .search-input {
     min-width: 60px;
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    height: 40px;
   }
   .search-btn {
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    height: 40px;
   }
   
   .mobile-menu-btn {
@@ -1327,6 +1373,13 @@ h3 {
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .stat-number { font-size: 2rem; }
   .stat-icon { display: none; }
+  
+  .services-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .service-card { padding: 1.5rem 1rem; }
+  .service-icon { width: 60px; height: 60px; font-size: 2rem; }
   
   .carousel-track {
     display: grid;
@@ -1420,19 +1473,26 @@ h3 {
   }
   .search-container {
     margin: 0 2px;
+    min-height: 34px;
   }
   .search-input {
     min-width: 40px;
-    padding: 4px 6px;
-    font-size: 0.7rem;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    height: 34px;
   }
   .search-btn {
-    padding: 4px 8px;
-    font-size: 0.7rem;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    height: 34px;
   }
   .mobile-menu-btn {
     font-size: 1.1rem;
     padding: 2px;
+  }
+  
+  .services-grid {
+    grid-template-columns: 1fr;
   }
   
   .carousel-track {
@@ -1481,7 +1541,6 @@ h3 {
   .modal-product-name { font-size: 1rem; }
   .modal-product-price { font-size: 1rem; }
   .modal-product-description { font-size: 0.8rem; }
-  .modal-product-features span { font-size: 0.7rem; }
   .modal-buy-btn {
     padding: 12px;
     font-size: 0.85rem;
