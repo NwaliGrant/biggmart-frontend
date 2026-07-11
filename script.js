@@ -221,11 +221,7 @@ function showProductDetails(product) {
                 <div class="modal-product-price">${productPrice}</div>
                 <p class="modal-product-description">${productDescription}</p>
                 
-                <div class="modal-product-features">
-                    <span><i class="fas fa-check-circle" style="color:#2e7d32;"></i> Free delivery</span>
-                    <span><i class="fas fa-check-circle" style="color:#2e7d32;"></i> 1-year warranty</span>
-                    <span><i class="fas fa-check-circle" style="color:#2e7d32;"></i> Secure payment</span>
-                </div>
+            
                 
                 <a href="${waLink}" target="_blank" class="modal-buy-btn">
                     <i class="fas fa-shopping-bag"></i> Buy Now - WhatsApp
