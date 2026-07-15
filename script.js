@@ -1,7 +1,8 @@
 /**
  * THE BIGGMART - COMPLETE WORKING SCRIPT
- * FIXED: Product modal ALWAYS shows next/prev arrows & dots (even with 1 image)
- * ADDED: Product carousel with dots, touch support (NO AUTO-SLIDE)
+ * FIXED: WhatsApp links for iOS (with country code 234)
+ * FIXED: Product modal - removed features section
+ * ADDED: Services section
  */
 
 const BACKEND_URL = 'https://biggmart-backend.onrender.com';
@@ -40,6 +41,50 @@ const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 const navMenu = document.getElementById('navMenu');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
+
+// ===== WHATSAPP HELPER - COMPLETE FIX FOR iOS =====
+function getWhatsAppLink(phoneNumber, message) {
+    // Remove any non-digit characters from phone number
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    
+    // Ensure country code is present (Nigeria = 234)
+    let formattedPhone = cleanPhone;
+    if (!formattedPhone.startsWith('234')) {
+        if (formattedPhone.startsWith('0')) {
+            formattedPhone = '234' + formattedPhone.substring(1);
+        } else {
+            formattedPhone = '234' + formattedPhone;
+        }
+    }
+    
+    // Encode the message
+    const encodedMessage = encodeURIComponent(message || '');
+    
+    // Use wa.me format which works better on iOS
+    return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+}
+
+// ===== OPEN WHATSAPP - iOS COMPATIBLE =====
+function openWhatsApp(phoneNumber, message) {
+    const link = getWhatsAppLink(phoneNumber, message);
+    
+    // Detect iOS
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+        // For iOS, try to open with a slight delay and fallback
+        const win = window.open(link, '_blank');
+        if (!win || win.closed || typeof win.closed === 'undefined') {
+            // If popup blocked, try direct navigation
+            setTimeout(() => {
+                window.location.href = link;
+            }, 300);
+        }
+    } else {
+        // For Android and others
+        window.open(link, '_blank');
+    }
+}
 
 // ===== BUILD IMAGE URL =====
 function buildImageUrl(imagePath) {
@@ -137,7 +182,7 @@ function closeModal() {
     document.body.style.overflow = '';
 }
 
-// ===== SHOW PRODUCT DETAILS - ALWAYS SHOW ARROWS & DOTS =====
+// ===== SHOW PRODUCT DETAILS - UPDATED WHATSAPP =====
 function showProductDetails(product) {
     if (!product) {
         showErrorModal('Product not found');
@@ -159,7 +204,6 @@ function showProductDetails(product) {
         images = ['https://picsum.photos/400/300?random=1'];
     }
     
-    // Ensure all images have full URLs
     images = images.map(img => {
         if (img.startsWith('http://') || img.startsWith('https://')) {
             return img;
@@ -174,24 +218,18 @@ function showProductDetails(product) {
         'used': '♻️ Used Item'
     }[productCategory] || '🛍️ Product';
 
-    const waMessage = encodeURIComponent(
-        `Hello BiggMart, I saw "${productName}" at the price of ${productPrice}. I am interested, please send your account details.`
-    );
-    const waLink = `https://wa.me/09025188180?text=${waMessage}`;
+    const waMessage = `Hello BiggMart, I saw "${productName}" at the price of ${productPrice}. I am interested, please send your account details.`;
 
-    // Generate image slides HTML
     let slidesHtml = images.map((img, idx) => `
         <div class="modal-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}">
             <img src="${img}" alt="${productName} - Image ${idx + 1}" onerror="this.src='https://picsum.photos/400/300?random=${idx}'">
         </div>
     `).join('');
 
-    // Generate dots HTML
     let dotsHtml = images.map((_, idx) => `
         <span class="modal-dot ${idx === 0 ? 'active' : ''}" data-index="${idx}"></span>
     `).join('');
 
-    // ALWAYS show arrows and dots, even with 1 image
     const overlay = document.createElement('div');
     overlay.id = 'customModalOverlay';
     overlay.className = 'modal-overlay';
@@ -221,11 +259,9 @@ function showProductDetails(product) {
                 <div class="modal-product-price">${productPrice}</div>
                 <p class="modal-product-description">${productDescription}</p>
                 
-            
-                
-                <a href="${waLink}" target="_blank" class="modal-buy-btn">
+                <button class="modal-buy-btn" id="productWhatsAppBtn">
                     <i class="fas fa-shopping-bag"></i> Buy Now - WhatsApp
-                </a>
+                </button>
             </div>
         </div>
     `;
@@ -234,9 +270,16 @@ function showProductDetails(product) {
     currentModal = overlay;
     document.body.style.overflow = 'hidden';
     
-    // Initialize modal slider after DOM is ready
     setTimeout(() => {
         initModalSlider(images.length);
+        
+        const waBtn = document.getElementById('productWhatsAppBtn');
+        if (waBtn) {
+            waBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                openWhatsApp('09025188180', waMessage);
+            });
+        }
     }, 50);
 }
 
@@ -257,7 +300,6 @@ function initModalSlider(imageCount) {
     
     if (!track) return;
     
-    // Update slides and dots
     function updateModalSlider(index) {
         const slides = track.querySelectorAll('.modal-slide');
         if (!slides.length) return;
@@ -273,10 +315,8 @@ function initModalSlider(imageCount) {
         modalCurrentIndex = index;
     }
     
-    // Go to specific slide
     function goToModalSlide(index) {
         if (modalImagesCount <= 1) {
-            // With only 1 image, just stay on it
             updateModalSlider(0);
             return;
         }
@@ -285,10 +325,8 @@ function initModalSlider(imageCount) {
         updateModalSlider(index);
     }
     
-    // Next slide
     function nextModalSlide() {
         if (modalImagesCount <= 1) {
-            // Show a subtle indicator that there's only one image
             const btn = document.getElementById('modalNextBtn');
             if (btn) {
                 btn.style.transform = 'scale(0.8)';
@@ -299,7 +337,6 @@ function initModalSlider(imageCount) {
         goToModalSlide(modalCurrentIndex + 1);
     }
     
-    // Previous slide
     function prevModalSlide() {
         if (modalImagesCount <= 1) {
             const btn = document.getElementById('modalPrevBtn');
@@ -312,7 +349,6 @@ function initModalSlider(imageCount) {
         goToModalSlide(modalCurrentIndex - 1);
     }
     
-    // Event listeners for buttons
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -327,7 +363,6 @@ function initModalSlider(imageCount) {
         });
     }
     
-    // If only 1 image, add a visual indicator
     if (modalImagesCount <= 1) {
         if (prevBtn) {
             prevBtn.style.opacity = '0.4';
@@ -337,7 +372,6 @@ function initModalSlider(imageCount) {
             nextBtn.style.opacity = '0.4';
             nextBtn.style.cursor = 'default';
         }
-        // Add a small badge showing "1/1"
         const container = document.getElementById('modalSliderContainer');
         if (container) {
             const badge = document.createElement('div');
@@ -358,7 +392,6 @@ function initModalSlider(imageCount) {
             container.appendChild(badge);
         }
     } else {
-        // Add image counter for multiple images
         const container = document.getElementById('modalSliderContainer');
         if (container) {
             const counter = document.createElement('div');
@@ -379,7 +412,6 @@ function initModalSlider(imageCount) {
             counter.textContent = `1 / ${modalImagesCount}`;
             container.appendChild(counter);
             
-            // Update counter when slide changes
             const originalUpdate = updateModalSlider;
             updateModalSlider = function(index) {
                 originalUpdate(index);
@@ -388,12 +420,10 @@ function initModalSlider(imageCount) {
                     counterEl.textContent = `${index + 1} / ${modalImagesCount}`;
                 }
             };
-            // Re-bind the update function
             window._updateModalSlider = updateModalSlider;
         }
     }
     
-    // Event listeners for dots
     dots.forEach((dot, i) => {
         dot.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -403,7 +433,6 @@ function initModalSlider(imageCount) {
         });
     });
     
-    // Keyboard navigation
     const keyHandler = function(e) {
         if (!document.getElementById('customModalOverlay')) {
             document.removeEventListener('keydown', keyHandler);
@@ -419,7 +448,6 @@ function initModalSlider(imageCount) {
     };
     document.addEventListener('keydown', keyHandler);
     
-    // Clean up on close
     const cleanupKeyHandler = function() {
         document.removeEventListener('keydown', keyHandler);
     };
@@ -437,7 +465,6 @@ function initModalSlider(imageCount) {
         });
     }
     
-    // Touch swipe support
     if (container) {
         let touchStartX = 0;
         let touchEndX = 0;
@@ -467,7 +494,6 @@ function initModalSlider(imageCount) {
             }
         }, { passive: true });
         
-        // Mouse drag support for desktop
         let isDragging = false;
         let startX = 0;
         let currentX = 0;
@@ -685,7 +711,6 @@ function initProductCarousel() {
     
     if (!track) return;
     
-    // Create dots container
     let dotsContainer = document.getElementById('productDots');
     if (!dotsContainer) {
         dotsContainer = document.createElement('div');
@@ -697,7 +722,6 @@ function initProductCarousel() {
         }
     }
     
-    // Add event listeners for prev/next buttons
     if (prevBtn) {
         prevBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -711,7 +735,6 @@ function initProductCarousel() {
         });
     }
     
-    // Handle window resize
     let resizeTimeout;
     window.addEventListener('resize', function() {
         clearTimeout(resizeTimeout);
@@ -727,7 +750,6 @@ function initProductCarousel() {
         }, 300);
     });
     
-    // Touch support
     let touchStartX = 0;
     let touchEndX = 0;
     track.addEventListener('touchstart', function(e) {
@@ -745,7 +767,6 @@ function initProductCarousel() {
         }
     }, { passive: true });
     
-    // Update dots on scroll
     track.addEventListener('scroll', function() {
         const cards = track.querySelectorAll('.product-card');
         if (!cards.length) return;
@@ -765,7 +786,6 @@ function initProductCarousel() {
         if (nextBtn) nextBtn.style.display = isDesktop ? 'flex' : 'none';
     }
     
-    // Initialize
     setTimeout(() => {
         updateProductDots();
         updateButtonsVisibility();
@@ -882,7 +902,6 @@ function renderProducts(products) {
         `;
     }).join('');
     
-    // Re-initialize carousel after rendering
     setTimeout(() => {
         initProductCarousel();
     }, 100);
@@ -1099,7 +1118,6 @@ function renderHero(images) {
         return `
             <div class="hero-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
                 <img src="${imageUrl}" alt="${img.title || 'Hero'}" class="hero-image" onerror="this.style.display='none'">
-                ${img.title ? `<div class="hero-caption"><h3>${img.title}</h3>${img.subtitle ? `<p>${img.subtitle}</p>` : ''}</div>` : ''}
             </div>
         `;
     }).join('');
@@ -1127,7 +1145,7 @@ function updateStats(stats) {
     if (c('statDelivery')) c('statDelivery').innerHTML = `${stats.on_time_delivery || 0}%`;
 }
 
-// ===== CONTACT BUTTONS =====
+// ===== CONTACT BUTTONS - UPDATED =====
 function initializeContactButtons() {
     document.querySelectorAll('.contact-detail').forEach(detail => {
         detail.addEventListener('click', function() {
@@ -1136,7 +1154,7 @@ function initializeContactButtons() {
             const value = valueEl ? valueEl.textContent.replace(/[^0-9@a-zA-Z.]/g, '') : '';
             if (type === 'whatsapp') {
                 const phone = value.replace(/\s/g, '');
-                window.open(`https://wa.me/${phone}`, '_blank');
+                openWhatsApp(phone, 'Hello BiggMart, I would like to make an inquiry.');
             } else if (type === 'phone') {
                 const phone = value.split(',')[0].trim();
                 window.location.href = `tel:${phone}`;
@@ -1151,12 +1169,14 @@ function initializeContactButtons() {
             }
         });
     });
+    
     document.querySelectorAll('.btn-wa').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            window.open('https://wa.me/09025188180', '_blank');
+            openWhatsApp('09025188180', 'Hello BiggMart, I would like to make an inquiry.');
         });
     });
+    
     document.querySelectorAll('.btn-call').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -1302,3 +1322,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
 console.log('✅ The BiggMart script loaded successfully!');
 console.log('📱 All features: Search, Product Carousel, Product Modal with ALWAYS VISIBLE arrows & dots, Swipe support');
+console.log('📱 WhatsApp fixed for iOS with country code 234');
